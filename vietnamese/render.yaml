@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: viet-anki
+    runtime: python
+    rootDir: vietnamese
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn viet_anki:app
+    plan: free
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0

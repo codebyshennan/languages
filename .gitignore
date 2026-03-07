@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+.DS_Store
+*.xlsm
+anki_progress.json
+viet_progress.json
