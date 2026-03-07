@@ -25,7 +25,7 @@ def load_vocab():
     for row in ws.iter_rows(min_row=2, values_only=True):
         if not row[0]:
             continue
-        num, cat, english, spanish, gender, notes, example_es, example_en = (list(row) + [""] * 8)[:8]
+        num, cat, english, spanish, gender, notes, example_es, example_en, spanish_mx = (list(row) + [""] * 9)[:9]
         if not spanish:
             continue
         cards.append({
@@ -37,6 +37,7 @@ def load_vocab():
             "notes":      str(notes   or ""),
             "example_es": str(example_es or ""),
             "example_en": str(example_en or ""),
+            "spanish_mx": str(spanish_mx or ""),
         })
     wb.close()
     print(f"  Loaded {len(cards)} cards")
@@ -250,6 +251,9 @@ HTML_PAGE = r"""<!DOCTYPE html>
   <h1>&#127466;&#127480; SPANISH ANKI</h1>
   <button class="mode-btn active" id="btn-es-en" onclick="setMode('es_en')">&#127466;&#127480; ES &#8594; EN</button>
   <button class="mode-btn"        id="btn-en-es" onclick="setMode('en_es')">&#127468;&#127463; EN &#8594; ES</button>
+  <div style="width:1px;background:rgba(255,255,255,0.2);height:20px;margin:0 4px;"></div>
+  <button class="mode-btn active" id="btn-dialect-es" onclick="setDialect('es')">&#127466;&#127480; España</button>
+  <button class="mode-btn"        id="btn-dialect-mx" onclick="setDialect('mx')">&#127474;&#127485; México</button>
   <label style="color:rgba(255,255,255,0.6);font-size:13px;">Category:</label>
   <select id="cat-select"></select>
   <div class="spacer"></div>
@@ -355,6 +359,7 @@ let curCard     = null;
 let answerShown = false;
 let sessCorr    = 0;
 let sessWrong   = 0;
+let dialect = "es";
 
 function loadProgress() {
   try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}"); }
@@ -403,7 +408,7 @@ function callPronounce(text, lang) {
   const clean = text.split("(")[0].replace(/['"\/]/g, "").trim();
   if (!clean) return;
   const utt = new SpeechSynthesisUtterance(clean);
-  utt.lang = lang === "es" ? "es-ES" : "en-US";
+  utt.lang = lang === "es" ? (dialect === "mx" ? "es-MX" : "es-ES") : "en-US";
   speechSynthesis.cancel();
   speechSynthesis.speak(utt);
 }
@@ -502,8 +507,8 @@ function nextCard() {
 
   if (mode === "es_en") {
     document.getElementById("card-dir").textContent = "Spanish  \u2192  English";
-    document.getElementById("card-q").textContent   = card.spanish;
-    callPronounce(card.spanish, "es");
+    document.getElementById("card-q").textContent   = spanishWord(card);
+    callPronounce(spanishWord(card), "es");
   } else {
     document.getElementById("card-dir").textContent = "English  \u2192  Spanish";
     document.getElementById("card-q").textContent   = card.english;
@@ -523,7 +528,7 @@ function showAnswer() {
   const c = curCard;
 
   document.getElementById("ans-english").textContent =
-    mode === "es_en" ? c.english : c.spanish;
+    mode === "es_en" ? c.english : spanishWord(c);
 
   const gWrap = document.getElementById("ans-gender-wrap");
   if (c.gender === "m") {
@@ -552,7 +557,7 @@ function showAnswer() {
   document.getElementById("btn-show").style.display    = "none";
   document.getElementById("rating-area").style.display = "block";
 
-  if (mode === "en_es") callPronounce(c.spanish, "es");
+  if (mode === "en_es") callPronounce(spanishWord(c), "es");
 }
 
 function rate(rating) {
@@ -584,13 +589,21 @@ function sessionEnd() {
 
 function pronounce() {
   if (!curCard) return;
-  callPronounce(curCard.spanish, "es");
+  callPronounce(spanishWord(curCard), "es");
 }
 
 function setMode(m) {
   mode = m;
   document.getElementById("btn-es-en").classList.toggle("active", m === "es_en");
   document.getElementById("btn-en-es").classList.toggle("active", m === "en_es");
+}
+function setDialect(d) {
+  dialect = d;
+  document.getElementById("btn-dialect-es").classList.toggle("active", d === "es");
+  document.getElementById("btn-dialect-mx").classList.toggle("active", d === "mx");
+}
+function spanishWord(card) {
+  return (dialect === "mx" && card.spanish_mx) ? card.spanish_mx : card.spanish;
 }
 function setProg(pct, label, cor, wrg) {
   document.getElementById("prog-bar").style.width   = pct + "%";
