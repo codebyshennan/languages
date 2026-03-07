@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: spanish-anki
+    runtime: python
+    rootDir: spanish
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn spanish_anki:app
+    plan: free
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
