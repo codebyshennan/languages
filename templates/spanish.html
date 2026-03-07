@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Spanish Anki — Spaced Repetition</title>
+<link rel="stylesheet" href="/static/shared.css">
+<style>
+  :root {
+    --primary:         #C60B1E;
+    --primary-dk:      #9A0918;
+    --accent:          #C60B1E;
+    --accent2:         #FFC400;
+    --card-shadow:     rgba(198,11,30,0.10);
+    --card-bg:         #FFFDF8;
+    --lgrey:           #FDF8F0;
+  }
+  #prog-bar { background: var(--accent2); }
+  #streak   { color: var(--accent2); }
+  .mode-btn.active { background: var(--primary-dk); border-color: var(--primary-dk); }
+  /* Spanish answer styles */
+  .gender-badge {
+    display: inline-block; font-size: 12px; font-weight: 700; padding: 2px 10px;
+    border-radius: 10px; margin-bottom: 10px;
+  }
+  .gender-m { background: #D6EAF8; color: #1A5276; }
+  .gender-f { background: #FDEDEC; color: #922B21; }
+  .ans-notes {
+    font-size: 13px; color: #5D4037; background: #FFF8E1;
+    border-left: 3px solid var(--accent2); padding: 8px 12px;
+    border-radius: 0 6px 6px 0; margin-bottom: 8px;
+  }
+  .ans-example-es { font-size: 13px; color: #334455; font-style: italic;
+                    background: #FDF0F0; border-left: 3px solid var(--primary);
+                    padding: 8px 12px; border-radius: 0 6px 6px 0; margin-bottom: 6px; }
+  .ans-example-en { font-size: 12px; color: var(--dgrey); font-style: italic; padding-left: 4px; }
+</style>
+</head>
+<body>
+
+<div id="topbar">
+  <h1>&#x1F1EA;&#x1F1F8; SPANISH ANKI</h1>
+  <button class="mode-btn active" id="btn-es-en" onclick="setMode('es_en')">&#x1F1EA;&#x1F1F8; ES &#8594; EN</button>
+  <button class="mode-btn"        id="btn-en-es" onclick="setMode('en_es')">&#x1F1EC;&#x1F1E7; EN &#8594; ES</button>
+  <label style="color:rgba(255,255,255,0.6);font-size:13px;">Category:</label>
+  <select id="cat-select"></select>
+  <div class="spacer"></div>
+  <button id="stats-btn" onclick="openStats()">&#128202; Stats</button>
+</div>
+
+<div id="progstrip">
+  <span id="prog-label">Ready</span>
+  <div id="prog-bar-wrap"><div id="prog-bar"></div></div>
+  <span id="streak"></span>
+</div>
+
+<div id="main">
+  <div id="welcome">
+    <h2>&#x1F1EA;&#x1F1F8; Spanish &#8212; Spaced Repetition</h2>
+    <p>3&thinsp;000 words &#183; SM-2 algorithm &#183; Gender &amp; conjugation notes</p>
+    <div class="stat-grid">
+      <div class="stat-box due"><div class="num" id="ov-due">&#8230;</div><div class="lbl">Due Today</div></div>
+      <div class="stat-box new"><div class="num" id="ov-new">&#8230;</div><div class="lbl">New</div></div>
+      <div class="stat-box">   <div class="num" id="ov-learn">&#8230;</div><div class="lbl">Learning</div></div>
+      <div class="stat-box mat"><div class="num" id="ov-mature">&#8230;</div><div class="lbl">Mature</div></div>
+    </div>
+    <p style="color:var(--dgrey);font-size:13px;">
+      <span class="kbd">Space</span> show answer &nbsp;
+      <span class="kbd">1</span>&#8211;<span class="kbd">4</span> rate &nbsp;
+      <span class="kbd">P</span> pronounce &nbsp;
+      <span class="kbd">Enter</span> start
+    </p>
+  </div>
+
+  <div id="card-wrap">
+    <div class="card">
+      <div class="card-header">
+        <span class="card-cat" id="card-cat">&#8212;</span>
+        <span class="card-badge" id="card-badge">New</span>
+      </div>
+      <div class="card-body">
+        <div class="card-direction" id="card-dir">Spanish &#8594; English</div>
+        <div class="card-question"  id="card-q">&#8230;</div>
+        <div class="card-divider"></div>
+        <div id="answer-area">
+          <div class="answer-primary" id="ans-english"></div>
+          <div id="ans-gender-wrap"></div>
+          <div class="ans-notes"      id="ans-notes"      style="display:none"></div>
+          <div class="ans-example-es" id="ans-example-es" style="display:none"></div>
+          <div class="ans-example-en" id="ans-example-en" style="display:none"></div>
+        </div>
+        <button class="pronounce-btn" onclick="pronounce()">&#128266; Pronounce</button>
+      </div>
+    </div>
+    <div id="action-area">
+      <button id="btn-show" onclick="showAnswer()">&#128065; Show Answer</button>
+      <div id="rating-area">
+        <div class="rating-row">
+          <button class="rating-btn btn-again" onclick="rate(1)">&#128560; Again<br><small>forgot</small></button>
+          <button class="rating-btn btn-hard"  onclick="rate(2)">&#128533; Hard<br><small>struggled</small></button>
+          <button class="rating-btn btn-good"  onclick="rate(3)">&#128578; Good<br><small>knew it</small></button>
+          <button class="rating-btn btn-easy"  onclick="rate(4)">&#128516; Easy<br><small>instant!</small></button>
+        </div>
+        <div class="hint-row">
+          <span class="kbd">1</span> Again &nbsp;
+          <span class="kbd">2</span> Hard &nbsp;
+          <span class="kbd">3</span> Good &nbsp;
+          <span class="kbd">4</span> Easy
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="session-end">
+    <h2>&#127881; Session Done!</h2>
+    <div class="end-stats">
+      <div class="end-stat"><div class="n" id="end-cor" style="color:var(--green)">&#8212;</div><div class="l">Correct</div></div>
+      <div class="end-stat"><div class="n" id="end-wrg" style="color:#C0392B">&#8212;</div><div class="l">Wrong</div></div>
+      <div class="end-stat"><div class="n" id="end-acc" style="color:var(--primary)">&#8212;</div><div class="l">Accuracy</div></div>
+    </div>
+    <p class="sub" id="end-sub"></p>
+  </div>
+
+  <div id="bottom-bar">
+    <button id="btn-start" onclick="startSession()">&#9654; Start Session</button>
+    <button id="btn-quit"  onclick="goHome()">&#127968; Home</button>
+  </div>
+</div>
+
+<div id="modal-overlay" onclick="if(event.target===this)closeStats()">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>&#128202; Your Progress</h3>
+      <button class="modal-close" onclick="closeStats()">&#10005;</button>
+    </div>
+    <div class="modal-body" id="modal-body">Loading&#8230;</div>
+  </div>
+</div>
+
+<script>
+window.LANG_CONFIG = {
+  storageKey: "spanish_progress",
+  vocabUrl:   "/api/vocab/spanish",
+  defaultMode: "es_en",
+
+  initUI: function(allCards, setModeFn) {
+    setModeFn("es_en");
+  },
+
+  updateModeUI: function(m) {
+    document.getElementById("btn-es-en").classList.toggle("active", m === "es_en");
+    document.getElementById("btn-en-es").classList.toggle("active", m === "en_es");
+  },
+
+  getQuestion: function(card, mode) {
+    if (mode === "es_en") return { text: card.spanish, dir: "Spanish \u2192 English" };
+    return               { text: card.english, dir: "English \u2192 Spanish" };
+  },
+
+  getQuestionTTS: function(card, mode) {
+    if (mode === "es_en") return { text: card.spanish, lang: "es-ES" };
+    return null;
+  },
+
+  getPronounce: function(card) {
+    return { text: card.spanish, lang: "es-ES" };
+  },
+
+  renderAnswer: function(card, mode) {
+    document.getElementById("ans-english").textContent = mode === "es_en" ? card.english : card.spanish;
+
+    var gWrap = document.getElementById("ans-gender-wrap");
+    if      (card.gender === "m") gWrap.innerHTML = '<span class="gender-badge gender-m">masculine</span>';
+    else if (card.gender === "f") gWrap.innerHTML = '<span class="gender-badge gender-f">feminine</span>';
+    else                          gWrap.innerHTML = "";
+
+    var notesEl = document.getElementById("ans-notes");
+    if (card.notes && card.notes !== "None" && card.notes.trim()) {
+      notesEl.textContent = card.notes; notesEl.style.display = "block";
+    } else { notesEl.style.display = "none"; }
+
+    var esEl = document.getElementById("ans-example-es");
+    var enEl = document.getElementById("ans-example-en");
+    if (card.example_es && card.example_es !== "None") {
+      esEl.textContent = card.example_es; esEl.style.display = "block";
+    } else { esEl.style.display = "none"; }
+    if (card.example_en && card.example_en !== "None") {
+      enEl.textContent = card.example_en; enEl.style.display = "block";
+    } else { enEl.style.display = "none"; }
+
+    if (mode === "en_es") return { text: card.spanish, lang: "es-ES" };
+    return null;
+  },
+
+  filterExtra: function(card) { return true; },
+  handleExtraKeys: function(e, curCard) {},
+};
+</script>
+<script src="/static/shared.js"></script>
+</body>
+</html>

@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Viet Anki — Spaced Repetition</title>
+<link rel="stylesheet" href="/static/shared.css">
+<style>
+  :root {
+    --primary:         #8B0000;
+    --primary-dk:      #6B0000;
+    --accent:          #CC2233;
+    --accent2:         #F4C430;
+    --card-shadow:     rgba(139,0,0,0.12);
+    --card-bg:         #FFFDF8;
+  }
+  #prog-bar { background: var(--accent2); }
+  #streak   { color: var(--accent2); }
+  /* Viet answer styles */
+  .ans-hanzi    { font-size: 28px; color: #8B0000; font-weight: 700; margin-right: 8px; }
+  .ans-cantonese{ font-size: 14px; color: #555; font-style: italic; }
+  #hanzi-row    { display: none; align-items: baseline; gap: 8px; margin-bottom: 10px; }
+  .ans-notes    { font-size: 13px; color: #334455; font-style: italic;
+                  background: #FFF8F0; border-left: 3px solid var(--accent2);
+                  padding: 8px 12px; border-radius: 0 6px 6px 0; margin-bottom: 8px; }
+</style>
+</head>
+<body>
+
+<div id="topbar">
+  <h1>&#x1F1FB;&#x1F1F3; VIET ANKI</h1>
+  <button class="mode-btn active" id="btn-vi-en" onclick="setMode('vi_en')">&#x1F1FB;&#x1F1F3; VI &#8594; EN</button>
+  <button class="mode-btn"        id="btn-en-vi" onclick="setMode('en_vi')">&#x1F1EC;&#x1F1E7; EN &#8594; VI</button>
+  <label style="color:rgba(255,255,255,0.6);font-size:13px;">Category:</label>
+  <select id="cat-select"></select>
+  <label style="color:rgba(255,255,255,0.6);font-size:13px;">Part:</label>
+  <select id="part-select"></select>
+  <div class="spacer"></div>
+  <button id="stats-btn" onclick="openStats()">&#128202; Stats</button>
+</div>
+
+<div id="progstrip">
+  <span id="prog-label">Ready</span>
+  <div id="prog-bar-wrap"><div id="prog-bar"></div></div>
+  <span id="streak"></span>
+</div>
+
+<div id="main">
+  <div id="welcome">
+    <h2>&#x1F1FB;&#x1F1F3; Vietnamese &#8212; Spaced Repetition</h2>
+    <p>1&thinsp;962 words &#183; SM-2 algorithm &#183; Cantonese connections</p>
+    <div class="stat-grid">
+      <div class="stat-box due"><div class="num" id="ov-due">&#8230;</div><div class="lbl">Due Today</div></div>
+      <div class="stat-box new"><div class="num" id="ov-new">&#8230;</div><div class="lbl">New</div></div>
+      <div class="stat-box">   <div class="num" id="ov-learn">&#8230;</div><div class="lbl">Learning</div></div>
+      <div class="stat-box mat"><div class="num" id="ov-mature">&#8230;</div><div class="lbl">Mature</div></div>
+    </div>
+    <p style="color:var(--dgrey);font-size:13px;">
+      <span class="kbd">Space</span> show answer &nbsp;
+      <span class="kbd">1</span>&#8211;<span class="kbd">4</span> rate &nbsp;
+      <span class="kbd">P</span> Vietnamese &nbsp;
+      <span class="kbd">C</span> Cantonese &nbsp;
+      <span class="kbd">Enter</span> start
+    </p>
+  </div>
+
+  <div id="card-wrap">
+    <div class="card">
+      <div class="card-header">
+        <span class="card-cat" id="card-cat">&#8212;</span>
+        <span id="card-part" style="color:rgba(255,255,255,0.55);font-size:12px;"></span>
+        <span class="card-badge" id="card-badge">New</span>
+      </div>
+      <div class="card-body">
+        <div class="card-direction" id="card-dir">Vietnamese &#8594; English</div>
+        <div class="card-question"  id="card-q">&#8230;</div>
+        <div class="card-divider"></div>
+        <div id="answer-area">
+          <div class="answer-primary" id="ans-english"></div>
+          <div id="hanzi-row">
+            <span class="ans-hanzi"     id="q-hanzi"></span>
+            <span class="ans-cantonese" id="q-cantonese"></span>
+          </div>
+          <div class="ans-notes" id="ans-notes" style="display:none"></div>
+        </div>
+        <button class="pronounce-btn" id="btn-pronounce"       onclick="pronounce()">&#128266; Vietnamese</button>
+        <button class="pronounce-btn" id="btn-pronounce-canto" onclick="pronounceCanto()" style="display:none;margin-left:8px;">&#128266; Cantonese</button>
+      </div>
+    </div>
+    <div id="action-area">
+      <button id="btn-show" onclick="showAnswer()">&#128065; Show Answer</button>
+      <div id="rating-area">
+        <div class="rating-row">
+          <button class="rating-btn btn-again" onclick="rate(1)">&#128560; Again<br><small>forgot</small></button>
+          <button class="rating-btn btn-hard"  onclick="rate(2)">&#128533; Hard<br><small>struggled</small></button>
+          <button class="rating-btn btn-good"  onclick="rate(3)">&#128578; Good<br><small>knew it</small></button>
+          <button class="rating-btn btn-easy"  onclick="rate(4)">&#128516; Easy<br><small>instant!</small></button>
+        </div>
+        <div class="hint-row">
+          <span class="kbd">1</span> Again &nbsp;
+          <span class="kbd">2</span> Hard &nbsp;
+          <span class="kbd">3</span> Good &nbsp;
+          <span class="kbd">4</span> Easy
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="session-end">
+    <h2>&#127881; Session Done!</h2>
+    <div class="end-stats">
+      <div class="end-stat"><div class="n" id="end-cor" style="color:var(--green)">&#8212;</div><div class="l">Correct</div></div>
+      <div class="end-stat"><div class="n" id="end-wrg" style="color:var(--red)">&#8212;</div><div class="l">Wrong</div></div>
+      <div class="end-stat"><div class="n" id="end-acc" style="color:var(--primary)">&#8212;</div><div class="l">Accuracy</div></div>
+    </div>
+    <p class="sub" id="end-sub"></p>
+  </div>
+
+  <div id="bottom-bar">
+    <button id="btn-start" onclick="startSession()">&#9654; Start Session</button>
+    <button id="btn-quit"  onclick="goHome()">&#127968; Home</button>
+  </div>
+</div>
+
+<div id="modal-overlay" onclick="if(event.target===this)closeStats()">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>&#128202; Your Progress</h3>
+      <button class="modal-close" onclick="closeStats()">&#10005;</button>
+    </div>
+    <div class="modal-body" id="modal-body">Loading&#8230;</div>
+  </div>
+</div>
+
+<script>
+function pronounceCanto() {
+  var card = window._vietCurCard;
+  if (card && card.hanzi) {
+    speechSynthesis && speechSynthesis.cancel();
+    var utt = new SpeechSynthesisUtterance(card.hanzi);
+    utt.lang = "zh-HK";
+    speechSynthesis.speak(utt);
+  }
+}
+
+window.LANG_CONFIG = {
+  storageKey: "viet_progress",
+  vocabUrl:   "/api/vocab/viet",
+  defaultMode: "vi_en",
+
+  initUI: function(allCards, setModeFn) {
+    var parts = [];
+    var seen  = {};
+    for (var i = 0; i < allCards.length; i++) {
+      if (!seen[allCards[i].part]) { seen[allCards[i].part] = true; parts.push(allCards[i].part); }
+    }
+    parts.sort();
+    document.getElementById("part-select").innerHTML =
+      '<option value="All">All parts</option>' +
+      parts.map(function(p) { return '<option>' + p + '</option>'; }).join("");
+    setModeFn("vi_en");
+  },
+
+  updateModeUI: function(m) {
+    document.getElementById("btn-vi-en").classList.toggle("active", m === "vi_en");
+    document.getElementById("btn-en-vi").classList.toggle("active", m === "en_vi");
+  },
+
+  getQuestion: function(card, mode) {
+    var partEl = document.getElementById("card-part");
+    if (partEl) partEl.textContent = " \u00b7 " + card.part;
+    if (mode === "vi_en") return { text: card.viet,    dir: "Vietnamese \u2192 English" };
+    return               { text: card.english, dir: "English \u2192 Vietnamese" };
+  },
+
+  getQuestionTTS: function(card, mode) {
+    if (mode === "vi_en") return { text: card.viet, lang: "vi-VN" };
+    return null;
+  },
+
+  getPronounce: function(card) {
+    return { text: card.viet, lang: "vi-VN" };
+  },
+
+  renderAnswer: function(card, mode) {
+    window._vietCurCard = card;
+    document.getElementById("ans-english").textContent = mode === "vi_en" ? card.english : card.viet;
+
+    var hanziRow   = document.getElementById("hanzi-row");
+    var cantoBtn   = document.getElementById("btn-pronounce-canto");
+    if (card.hanzi) {
+      document.getElementById("q-hanzi").textContent     = card.hanzi;
+      document.getElementById("q-cantonese").textContent = card.cantonese ? ": " + card.cantonese : "";
+      hanziRow.style.display = "flex";
+      cantoBtn.style.display = "inline-block";
+    } else {
+      hanziRow.style.display = "none";
+      cantoBtn.style.display = "none";
+    }
+
+    var notesEl = document.getElementById("ans-notes");
+    if (card.notes && card.notes !== "None") {
+      notesEl.textContent = card.notes; notesEl.style.display = "block";
+    } else { notesEl.style.display = "none"; }
+
+    if (mode === "en_vi") return { text: card.viet, lang: "vi-VN" };
+    return null;
+  },
+
+  filterExtra: function(card) {
+    var partSel = document.getElementById("part-select");
+    if (!partSel) return true;
+    var part = partSel.value;
+    return part === "All" || card.part === part;
+  },
+
+  handleExtraKeys: function(e, curCard) {
+    if ((e.key === "c" || e.key === "C") && curCard) pronounceCanto();
+  },
+};
+</script>
+<script src="/static/shared.js"></script>
+</body>
+</html>

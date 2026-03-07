@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bahasa Anki — Spaced Repetition</title>
+<link rel="stylesheet" href="/static/shared.css">
+<style>
+  :root {
+    --primary:         #1A3C5E;
+    --primary-dk:      #162E48;
+    --accent:          #2E6DA4;
+    --accent2:         #1ABC9C;
+    --card-shadow:     rgba(26,60,94,0.12);
+    --card-bg:         #FAFCFF;
+  }
+  /* Bahasa answer styles */
+  .ans-malay   { font-size: 16px; color: #2E7A5E; font-weight: 600; margin-bottom: 12px; }
+  .ans-example { font-size: 13px; color: #334455; font-style: italic;
+                 background: #F0F8F4; border-left: 3px solid var(--green);
+                 padding: 8px 12px; border-radius: 0 6px 6px 0; margin-bottom: 8px; }
+  .ans-eng-ex  { font-size: 12px; color: var(--dgrey); font-style: italic; padding-left: 4px; }
+</style>
+</head>
+<body>
+
+<div id="topbar">
+  <h1>&#x1F0CF; BAHASA ANKI</h1>
+  <button class="mode-btn active" id="btn-id-en" onclick="setMode('id_en')">&#x1F1EE;&#x1F1E9; ID &#8594; EN</button>
+  <button class="mode-btn"        id="btn-en-id" onclick="setMode('en_id')">&#x1F1EC;&#x1F1E7; EN &#8594; ID</button>
+  <label style="color:rgba(255,255,255,0.6);font-size:13px;">Category:</label>
+  <select id="cat-select"></select>
+  <div class="spacer"></div>
+  <button id="stats-btn" onclick="openStats()">&#128202; Stats</button>
+</div>
+
+<div id="progstrip">
+  <span id="prog-label">Ready</span>
+  <div id="prog-bar-wrap"><div id="prog-bar"></div></div>
+  <span id="streak"></span>
+</div>
+
+<div id="main">
+  <div id="welcome">
+    <h2>&#x1F1EE;&#x1F1E9; Bahasa Indonesia / Melayu</h2>
+    <p>Spaced-repetition flashcards &#8212; 2&thinsp;000 words, SM-2 algorithm</p>
+    <div class="stat-grid">
+      <div class="stat-box due"><div class="num" id="ov-due">&#8230;</div><div class="lbl">Due Today</div></div>
+      <div class="stat-box new"><div class="num" id="ov-new">&#8230;</div><div class="lbl">New</div></div>
+      <div class="stat-box">   <div class="num" id="ov-learn">&#8230;</div><div class="lbl">Learning</div></div>
+      <div class="stat-box mat"><div class="num" id="ov-mature">&#8230;</div><div class="lbl">Mature</div></div>
+    </div>
+    <p style="color:var(--dgrey);font-size:13px;">
+      <span class="kbd">Space</span> show answer &nbsp;
+      <span class="kbd">1</span>&#8211;<span class="kbd">4</span> rate &nbsp;
+      <span class="kbd">P</span> pronounce &nbsp;
+      <span class="kbd">Enter</span> start
+    </p>
+  </div>
+
+  <div id="card-wrap">
+    <div class="card">
+      <div class="card-header">
+        <span class="card-cat" id="card-cat">&#8212;</span>
+        <span class="card-badge" id="card-badge">New</span>
+      </div>
+      <div class="card-body">
+        <div class="card-direction" id="card-dir">Indonesian &#8594; English</div>
+        <div class="card-question"  id="card-q">&#8230;</div>
+        <div class="card-divider"></div>
+        <div id="answer-area">
+          <div class="answer-primary" id="ans-word"></div>
+          <div class="ans-malay"      id="ans-malay"></div>
+          <div class="ans-example"    id="ans-contoh"  style="display:none"></div>
+          <div class="ans-eng-ex"     id="ans-eng-ex"  style="display:none"></div>
+        </div>
+        <button class="pronounce-btn" id="btn-pronounce" onclick="pronounce()">&#128266; Pronounce</button>
+      </div>
+    </div>
+    <div id="action-area">
+      <button id="btn-show" onclick="showAnswer()">&#128065; Show Answer</button>
+      <div id="rating-area">
+        <div class="rating-row">
+          <button class="rating-btn btn-again" onclick="rate(1)">&#128560; Again<br><small>forgot</small></button>
+          <button class="rating-btn btn-hard"  onclick="rate(2)">&#128533; Hard<br><small>struggled</small></button>
+          <button class="rating-btn btn-good"  onclick="rate(3)">&#128578; Good<br><small>knew it</small></button>
+          <button class="rating-btn btn-easy"  onclick="rate(4)">&#128516; Easy<br><small>instant!</small></button>
+        </div>
+        <div class="hint-row">
+          <span class="kbd">1</span> Again &nbsp;
+          <span class="kbd">2</span> Hard &nbsp;
+          <span class="kbd">3</span> Good &nbsp;
+          <span class="kbd">4</span> Easy
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="session-end">
+    <h2>&#127881; Session Done!</h2>
+    <div class="end-stats">
+      <div class="end-stat"><div class="n" id="end-cor" style="color:var(--green)">&#8212;</div><div class="l">Correct</div></div>
+      <div class="end-stat"><div class="n" id="end-wrg" style="color:var(--red)">&#8212;</div><div class="l">Wrong</div></div>
+      <div class="end-stat"><div class="n" id="end-acc" style="color:var(--primary)">&#8212;</div><div class="l">Accuracy</div></div>
+    </div>
+    <p class="sub" id="end-sub"></p>
+  </div>
+
+  <div id="bottom-bar">
+    <button id="btn-start" onclick="startSession()">&#9654; Start Session</button>
+    <button id="btn-quit"  onclick="goHome()">&#127968; Home</button>
+  </div>
+</div>
+
+<div id="modal-overlay" onclick="if(event.target===this)closeStats()">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>&#128202; Your Progress</h3>
+      <button class="modal-close" onclick="closeStats()">&#10005;</button>
+    </div>
+    <div class="modal-body" id="modal-body">Loading&#8230;</div>
+  </div>
+</div>
+
+<script>
+window.LANG_CONFIG = {
+  storageKey: "bahasa_progress",
+  vocabUrl:   "/api/vocab/bahasa",
+  defaultMode: "id_en",
+
+  initUI: function(allCards, setModeFn) {
+    setModeFn("id_en");
+  },
+
+  updateModeUI: function(m) {
+    document.getElementById("btn-id-en").classList.toggle("active", m === "id_en");
+    document.getElementById("btn-en-id").classList.toggle("active", m === "en_id");
+  },
+
+  getQuestion: function(card, mode) {
+    if (mode === "id_en") return { text: card.indo,    dir: "Indonesian \u2192 English" };
+    return               { text: card.english, dir: "English \u2192 Indonesian" };
+  },
+
+  getQuestionTTS: function(card, mode) {
+    if (mode === "id_en") return { text: card.indo, lang: "id-ID" };
+    return null;
+  },
+
+  getPronounce: function(card) {
+    return { text: card.indo, lang: "id-ID" };
+  },
+
+  renderAnswer: function(card, mode) {
+    document.getElementById("ans-word").textContent  = mode === "id_en" ? card.english : card.indo;
+    document.getElementById("ans-malay").textContent = card.malay ? "Malay: " + card.malay : "";
+    var ctEl = document.getElementById("ans-contoh");
+    var exEl = document.getElementById("ans-eng-ex");
+    if (card.contoh && card.contoh !== "None") {
+      ctEl.textContent = "\u00a0\u00a0" + card.contoh; ctEl.style.display = "block";
+    } else { ctEl.style.display = "none"; }
+    if (card.eng_ex && card.eng_ex !== "None") {
+      exEl.textContent = "\u00a0\u00a0" + card.eng_ex; exEl.style.display = "block";
+    } else { exEl.style.display = "none"; }
+    if (mode === "en_id") return { text: card.indo, lang: "id-ID" };
+    return null;
+  },
+
+  filterExtra: function(card) { return true; },
+  handleExtraKeys: function(e, curCard) {},
+};
+</script>
+<script src="/static/shared.js"></script>
+</body>
+</html>
