@@ -1,3 +1,185 @@
+# Spanish Anki App Implementation Plan
+
+> **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
+
+**Goal:** Build a Spanish spaced-repetition flashcard web app with a 3000-word vocab file (generated via Claude API) and a Flask SPA identical in architecture to bahasa_anki.py.
+
+**Architecture:** `build_vocab.py` generates `spanish_vocab_3000words.xlsx` once locally using `wordfreq` + Claude Haiku API. `spanish_anki.py` is a single-file Flask app: backend serves `GET /api/vocab` and `GET /`, frontend JS handles SM-2 via localStorage, TTS via Web Speech API (`es-ES`).
+
+**Tech Stack:** Python 3 / Flask / openpyxl / gunicorn / wordfreq / anthropic SDK, vanilla JS, Web Speech API, Render free tier
+
+---
+
+### Task 1: Create `spanish/build_vocab.py`
+
+**Files:**
+- Create: `spanish/build_vocab.py`
+
+This script:
+1. Gets top 3500 Spanish words from `wordfreq` (extra buffer for filtering)
+2. Filters out words shorter than 2 chars and non-alphabetic tokens
+3. Takes the top 3000 remaining
+4. Batches them in groups of 50 and calls Claude Haiku to return JSON with all columns
+5. Saves to `spanish/spanish_vocab_3000words.xlsx`
+
+**Step 1: Create the file**
+
+```python
+#!/usr/bin/env python3
+"""
+build_vocab.py
+Generates spanish_vocab_3000words.xlsx using wordfreq + Claude API.
+Run once locally:  python3 build_vocab.py
+Requires:  pip install wordfreq anthropic openpyxl
+Set ANTHROPIC_API_KEY in environment before running.
+"""
+
+import json
+import os
+import time
+from pathlib import Path
+import openpyxl
+from wordfreq import top_n_list
+import anthropic
+
+# ── Config ────────────────────────────────────────────────────────────────────
+TARGET      = 3000
+BATCH_SIZE  = 50
+OUTPUT      = Path(__file__).parent / "spanish_vocab_3000words.xlsx"
+CATEGORIES  = [
+    "Pronouns & Articles", "Verbs - Common", "Verbs - Motion",
+    "Verbs - Communication", "Nouns - People", "Nouns - Places",
+    "Nouns - Objects", "Nouns - Abstract", "Adjectives", "Adverbs",
+    "Prepositions & Conjunctions", "Numbers & Time", "Food & Drink",
+    "Body & Health", "Nature & Weather", "Travel & Transport",
+    "Work & Business", "Family & Relationships", "Emotions & States",
+    "General"
+]
+
+SYSTEM_PROMPT = f"""You are a Spanish language expert. Given a list of Spanish words,
+return a JSON array where each element has exactly these fields:
+- "spanish": the word as given
+- "english": primary English translation (concise, 1-4 words)
+- "cat": category from this list: {json.dumps(CATEGORIES)}
+- "gender": "m" (masculine noun), "f" (feminine noun), or "-" (verb/adj/adverb/other)
+- "notes": for nouns include article (el/la/los/las); for irregular verbs include key conjugation (e.g. "ir: voy, vas, va"); empty string if nothing notable
+- "example_es": one short natural Spanish example sentence using the word
+- "example_en": English translation of the example sentence
+
+Return ONLY a valid JSON array, no markdown, no extra text."""
+
+def get_words() -> list[str]:
+    raw = top_n_list("es", TARGET + 500)
+    filtered = [w for w in raw if w.isalpha() and len(w) >= 2]
+    return filtered[:TARGET]
+
+def build_batch(words: list[str], client: anthropic.Anthropic) -> list[dict]:
+    prompt = "Process these Spanish words:\n" + json.dumps(words)
+    for attempt in range(3):
+        try:
+            msg = client.messages.create(
+                model="claude-haiku-4-5-20251001",
+                max_tokens=8192,
+                system=SYSTEM_PROMPT,
+                messages=[{"role": "user", "content": prompt}]
+            )
+            text = msg.content[0].text.strip()
+            # Strip markdown code fences if present
+            if text.startswith("```"):
+                text = text.split("\n", 1)[1]
+                text = text.rsplit("```", 1)[0]
+            return json.loads(text)
+        except Exception as e:
+            print(f"  Attempt {attempt+1} failed: {e}")
+            if attempt < 2:
+                time.sleep(2 ** attempt)
+    return []
+
+def main():
+    api_key = os.environ.get("ANTHROPIC_API_KEY")
+    if not api_key:
+        raise SystemExit("Set ANTHROPIC_API_KEY environment variable first.")
+
+    client = anthropic.Anthropic(api_key=api_key)
+    words  = get_words()
+    print(f"Got {len(words)} words from wordfreq. Building vocab in batches of {BATCH_SIZE}...")
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Spanish Vocab"
+    ws.append(["num", "cat", "english", "spanish", "gender", "notes", "example_es", "example_en"])
+
+    num = 1
+    for i in range(0, len(words), BATCH_SIZE):
+        batch = words[i:i + BATCH_SIZE]
+        print(f"  Batch {i//BATCH_SIZE + 1}/{(len(words)-1)//BATCH_SIZE + 1} ({len(batch)} words)...")
+        results = build_batch(batch, client)
+        for r in results:
+            ws.append([
+                num,
+                r.get("cat", "General"),
+                r.get("english", ""),
+                r.get("spanish", ""),
+                r.get("gender", "-"),
+                r.get("notes", ""),
+                r.get("example_es", ""),
+                r.get("example_en", ""),
+            ])
+            num += 1
+        time.sleep(0.3)  # gentle rate limiting
+
+    wb.save(OUTPUT)
+    print(f"\nSaved {num-1} cards to {OUTPUT}")
+
+if __name__ == "__main__":
+    main()
+```
+
+**Step 2: Install deps and run**
+
+```bash
+pip install wordfreq anthropic openpyxl
+export ANTHROPIC_API_KEY=your_key_here
+cd /Users/wongshennan/Documents/personal/languages/spanish
+python3 build_vocab.py
+```
+
+Expected output: ~60 batches, ~3000 cards saved to `spanish_vocab_3000words.xlsx`. Takes ~3-5 minutes.
+
+**Step 3: Verify the xlsx**
+
+```python
+import openpyxl
+wb = openpyxl.load_workbook("spanish_vocab_3000words.xlsx", read_only=True)
+ws = wb.active
+rows = list(ws.iter_rows(min_row=2, values_only=True))
+print(f"Cards: {len(rows)}")
+print("Sample:", rows[0])
+print("Sample:", rows[100])
+```
+
+Expected: ~3000 rows, each with 8 non-empty fields.
+
+**Step 4: Commit**
+
+```bash
+cd /Users/wongshennan/Documents/personal/languages
+git add spanish/build_vocab.py spanish/spanish_vocab_3000words.xlsx
+git commit -m "feat: add Spanish vocab build script and 3000-word xlsx"
+```
+
+---
+
+### Task 2: Create `spanish/spanish_anki.py`
+
+**Files:**
+- Create: `spanish/spanish_anki.py`
+
+This is a single-file Flask app. The backend loads the xlsx, serves `/api/vocab` and `/`. The frontend is an embedded HTML SPA with full SM-2 + localStorage + Web Speech API.
+
+**Step 1: Create the file**
+
+```python
 #!/usr/bin/env python3
 """
 spanish_anki.py  —  Spanish Spaced-Repetition Web App
@@ -25,7 +207,7 @@ def load_vocab():
     for row in ws.iter_rows(min_row=2, values_only=True):
         if not row[0]:
             continue
-        num, cat, english, spanish, gender, notes, example_es, example_en, spanish_mx = (list(row) + [""] * 9)[:9]
+        num, cat, english, spanish, gender, notes, example_es, example_en = (list(row) + [""] * 8)[:8]
         if not spanish:
             continue
         cards.append({
@@ -37,7 +219,6 @@ def load_vocab():
             "notes":      str(notes   or ""),
             "example_es": str(example_es or ""),
             "example_en": str(example_en or ""),
-            "spanish_mx": str(spanish_mx or ""),
         })
     wb.close()
     print(f"  Loaded {len(cards)} cards")
@@ -81,6 +262,7 @@ HTML_PAGE = r"""<!DOCTYPE html>
   body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
          background: var(--lgrey); min-height: 100vh; }
 
+  /* ── Top bar ── */
   #topbar {
     background: var(--red); color: var(--white);
     display: flex; align-items: center; padding: 10px 20px; gap: 12px;
@@ -103,9 +285,11 @@ HTML_PAGE = r"""<!DOCTYPE html>
   #stats-btn {
     background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3);
     color: white; padding: 5px 14px; border-radius: 6px; cursor: pointer; font-size: 13px;
+    transition: all 0.2s;
   }
   #stats-btn:hover { background: rgba(255,255,255,0.2); }
 
+  /* ── Progress strip ── */
   #progstrip {
     background: var(--dkred); padding: 6px 20px;
     display: flex; align-items: center; gap: 12px;
@@ -118,8 +302,10 @@ HTML_PAGE = r"""<!DOCTYPE html>
   #prog-bar { height: 100%; background: var(--gold); border-radius: 3px; transition: width 0.4s; width: 0%; }
   #streak { color: var(--gold); font-size: 13px; font-weight: 700; }
 
+  /* ── Main ── */
   #main { max-width: 720px; margin: 24px auto; padding: 0 16px; }
 
+  /* ── Welcome ── */
   #welcome { text-align: center; padding: 40px 20px; }
   #welcome h2 { color: var(--red); font-size: 28px; margin-bottom: 12px; }
   #welcome p  { color: var(--dgrey); font-size: 15px; line-height: 1.6; }
@@ -131,10 +317,10 @@ HTML_PAGE = r"""<!DOCTYPE html>
   .stat-box.due .num { color: var(--amber); }
   .stat-box.mat .num { color: var(--green); }
 
+  /* ── Card ── */
   #card-wrap { display: none; }
   .card { background: var(--card); border-radius: 16px;
-          box-shadow: 0 4px 20px rgba(198,11,30,0.10); overflow: hidden;
-          position: relative; }
+          box-shadow: 0 4px 20px rgba(198,11,30,0.10); overflow: hidden; }
   .card-header {
     background: var(--red); padding: 10px 20px;
     display: flex; align-items: center; justify-content: space-between;
@@ -142,10 +328,10 @@ HTML_PAGE = r"""<!DOCTYPE html>
   .card-cat { color: rgba(255,255,255,0.75); font-size: 12px; font-weight: 600;
               text-transform: uppercase; letter-spacing: 0.5px; }
   .card-badge { font-size: 11px; padding: 3px 10px; border-radius: 12px; font-weight: 600; }
-  .badge-new      { background: var(--blue);  color: white; }
-  .badge-learning { background: var(--amber); color: white; }
-  .badge-review   { background: #8E44AD;       color: white; }
-  .badge-mature   { background: var(--green);  color: white; }
+  .badge-new      { background: var(--blue);   color: white; }
+  .badge-learning { background: var(--amber);  color: white; }
+  .badge-review   { background: #8E44AD;        color: white; }
+  .badge-mature   { background: var(--green);   color: white; }
   .card-body { padding: 28px 32px 20px; }
   .card-direction { color: var(--red); font-size: 13px; font-weight: 600; margin-bottom: 12px; }
   .card-question {
@@ -154,6 +340,7 @@ HTML_PAGE = r"""<!DOCTYPE html>
   }
   .card-divider { height: 2px; background: var(--shadow); border-radius: 1px; margin: 16px 0; }
 
+  /* ── Answer ── */
   #answer-area { display: none; }
   .answer-english { font-size: 26px; font-weight: 700; color: var(--green); margin-bottom: 6px; }
   .gender-badge {
@@ -172,6 +359,7 @@ HTML_PAGE = r"""<!DOCTYPE html>
                 padding: 8px 12px; border-radius: 0 6px 6px 0; margin-bottom: 6px; }
   .example-en { font-size: 12px; color: var(--dgrey); font-style: italic; padding-left: 4px; }
 
+  /* ── Pronounce ── */
   .pronounce-btn {
     margin-top: 12px; background: #FDEBD0; border: none; color: var(--dkred);
     padding: 7px 18px; border-radius: 8px; cursor: pointer; font-size: 13px;
@@ -179,6 +367,7 @@ HTML_PAGE = r"""<!DOCTYPE html>
   }
   .pronounce-btn:hover { background: #FAD7A0; }
 
+  /* ── Action area ── */
   #action-area { margin-top: 16px; }
   #btn-show {
     width: 100%; background: var(--red); color: white; border: none;
@@ -201,6 +390,7 @@ HTML_PAGE = r"""<!DOCTYPE html>
   .btn-easy  { background: var(--blue); }
   .hint-row { text-align: center; color: var(--dgrey); font-size: 11px; margin-top: 8px; }
 
+  /* ── Bottom bar ── */
   #bottom-bar { display: flex; gap: 10px; margin-top: 16px; }
   #btn-start {
     flex: 1; background: var(--teal); color: white; border: none;
@@ -210,12 +400,14 @@ HTML_PAGE = r"""<!DOCTYPE html>
   #btn-quit { background: var(--dgrey); color: white; border: none;
               padding: 13px 20px; border-radius: 10px; font-size: 13px; font-weight: 600; cursor: pointer; }
 
+  /* ── Session end ── */
   #session-end { display: none; text-align: center; padding: 32px 20px; }
   #session-end h2 { color: var(--green); font-size: 32px; margin-bottom: 8px; }
   .end-stats { display: flex; justify-content: center; gap: 24px; margin: 20px 0; }
   .end-stat .n { font-size: 28px; font-weight: 700; }
   .end-stat .l { font-size: 12px; color: var(--dgrey); }
 
+  /* ── Stats modal ── */
   #modal-overlay {
     display: none; position: fixed; inset: 0;
     background: rgba(0,0,0,0.5); z-index: 100;
@@ -244,49 +436,6 @@ HTML_PAGE = r"""<!DOCTYPE html>
   .pct-fill { height: 100%; background: var(--green); border-radius: 3px; }
   .kbd { display: inline-block; background: #EEF2F6; border: 1px solid #C8D4E0;
          border-radius: 4px; padding: 1px 6px; font-size: 11px; font-family: monospace; color: var(--dgrey); }
-
-  /* ── Swipe card ──────────────────────────────────────────────────────────── */
-  #swipe-card {
-    transform-origin: center bottom;
-    user-select: none; -webkit-user-select: none;
-    touch-action: none;
-    cursor: grab;
-    will-change: transform;
-  }
-  #swipe-card.is-dragging { cursor: grabbing; }
-  .swipe-ind {
-    position: absolute; top: 18px; padding: 5px 12px;
-    border-radius: 8px; font-size: 15px; font-weight: 800;
-    letter-spacing: 1px; opacity: 0; pointer-events: none;
-    border: 3px solid; z-index: 10;
-  }
-  .swipe-ind-left  { left: 14px;  color: #C0392B; border-color: #C0392B; background: rgba(192,57,43,0.08); transform: rotate(12deg); }
-  .swipe-ind-right { right: 14px; color: var(--green); border-color: var(--green); background: rgba(39,174,96,0.08); transform: rotate(-12deg); }
-  .swipe-ind-up    { bottom: 18px; left: 50%; transform: translateX(-50%); color: var(--green); border-color: var(--green); background: rgba(39,174,96,0.08); }
-  .swipe-ind-down  { top: 18px;   left: 50%; transform: translateX(-50%); color: #C0392B; border-color: #C0392B; background: rgba(192,57,43,0.08); }
-
-  /* ── Mobile responsive ───────────────────────────────────────────────────── */
-  @media (max-width: 600px) {
-    #topbar { padding: 8px 10px; gap: 5px; }
-    #topbar h1 { font-size: 13px; }
-    .mode-btn { font-size: 11px; padding: 4px 7px; }
-    #cat-select { font-size: 12px; max-width: 100px; }
-    #stats-btn { font-size: 11px; padding: 4px 8px; }
-    #progstrip { padding: 4px 10px; }
-    #main { margin: 10px auto; padding: 0 10px; }
-    .stat-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; margin: 16px 0; }
-    .stat-box .num { font-size: 22px; }
-    .card-body { padding: 16px 14px 14px; }
-    .card-question { font-size: 30px; }
-    .answer-english { font-size: 20px; }
-    .rating-row { gap: 6px; }
-    .rating-btn { font-size: 11px; padding: 10px 4px; }
-    .hint-row { display: none; }
-    .overview-grid { grid-template-columns: repeat(2, 1fr); }
-    .end-stats { gap: 12px; }
-    .end-stat .n { font-size: 22px; }
-    .modal { max-height: 90vh; }
-  }
 </style>
 </head>
 <body>
@@ -295,9 +444,6 @@ HTML_PAGE = r"""<!DOCTYPE html>
   <h1>&#127466;&#127480; SPANISH ANKI</h1>
   <button class="mode-btn active" id="btn-es-en" onclick="setMode('es_en')">&#127466;&#127480; ES &#8594; EN</button>
   <button class="mode-btn"        id="btn-en-es" onclick="setMode('en_es')">&#127468;&#127463; EN &#8594; ES</button>
-  <div style="width:1px;background:rgba(255,255,255,0.2);height:20px;margin:0 4px;"></div>
-  <button class="mode-btn active" id="btn-dialect-es" onclick="setDialect('es')">&#127466;&#127480; España</button>
-  <button class="mode-btn"        id="btn-dialect-mx" onclick="setDialect('mx')">&#127474;&#127485; México</button>
   <label style="color:rgba(255,255,255,0.6);font-size:13px;">Category:</label>
   <select id="cat-select"></select>
   <div class="spacer"></div>
@@ -311,6 +457,7 @@ HTML_PAGE = r"""<!DOCTYPE html>
 </div>
 
 <div id="main">
+
   <div id="welcome">
     <h2>&#127466;&#127480; Spanish &#8212; Spaced Repetition</h2>
     <p>3 000 words &#183; SM-2 algorithm &#183; Gender &amp; conjugation notes</p>
@@ -329,11 +476,7 @@ HTML_PAGE = r"""<!DOCTYPE html>
   </div>
 
   <div id="card-wrap">
-    <div class="card" id="swipe-card">
-      <div class="swipe-ind swipe-ind-left"  id="swipe-ind-l">&#128533; HARD</div>
-      <div class="swipe-ind swipe-ind-right" id="swipe-ind-r">&#128516; EASY</div>
-      <div class="swipe-ind swipe-ind-up"    id="swipe-ind-u">&#128578; GOOD</div>
-      <div class="swipe-ind swipe-ind-down"  id="swipe-ind-d">&#128560; AGAIN</div>
+    <div class="card">
       <div class="card-header">
         <span class="card-cat" id="card-cat">&#8212;</span>
         <span class="card-badge" id="card-badge">New</span>
@@ -342,6 +485,7 @@ HTML_PAGE = r"""<!DOCTYPE html>
         <div class="card-direction" id="card-dir">Spanish &#8594; English</div>
         <div class="card-question"  id="card-q">&#8230;</div>
         <div class="card-divider"></div>
+
         <div id="answer-area">
           <div class="answer-english" id="ans-english"></div>
           <div id="ans-gender-wrap"></div>
@@ -349,9 +493,11 @@ HTML_PAGE = r"""<!DOCTYPE html>
           <div class="example-es"  id="ans-example-es" style="display:none"></div>
           <div class="example-en"  id="ans-example-en" style="display:none"></div>
         </div>
+
         <button class="pronounce-btn" id="btn-pronounce" onclick="pronounce()">&#128266; Pronounce</button>
       </div>
     </div>
+
     <div id="action-area">
       <button id="btn-show" onclick="showAnswer()">&#128065; Show Answer</button>
       <div id="rating-area">
@@ -407,7 +553,6 @@ let curCard     = null;
 let answerShown = false;
 let sessCorr    = 0;
 let sessWrong   = 0;
-let dialect = "es";
 
 function loadProgress() {
   try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}"); }
@@ -456,7 +601,7 @@ function callPronounce(text, lang) {
   const clean = text.split("(")[0].replace(/['"\/]/g, "").trim();
   if (!clean) return;
   const utt = new SpeechSynthesisUtterance(clean);
-  utt.lang = lang === "es" ? (dialect === "mx" ? "es-MX" : "es-ES") : "en-US";
+  utt.lang = lang === "es" ? "es-ES" : "en-US";
   speechSynthesis.cancel();
   speechSynthesis.speak(utt);
 }
@@ -555,8 +700,8 @@ function nextCard() {
 
   if (mode === "es_en") {
     document.getElementById("card-dir").textContent = "Spanish  \u2192  English";
-    document.getElementById("card-q").textContent   = spanishWord(card);
-    callPronounce(spanishWord(card), "es");
+    document.getElementById("card-q").textContent   = card.spanish;
+    callPronounce(card.spanish, "es");
   } else {
     document.getElementById("card-dir").textContent = "English  \u2192  Spanish";
     document.getElementById("card-q").textContent   = card.english;
@@ -576,8 +721,9 @@ function showAnswer() {
   const c = curCard;
 
   document.getElementById("ans-english").textContent =
-    mode === "es_en" ? c.english : spanishWord(c);
+    mode === "es_en" ? c.english : c.spanish;
 
+  // Gender badge
   const gWrap = document.getElementById("ans-gender-wrap");
   if (c.gender === "m") {
     gWrap.innerHTML = '<span class="gender-badge gender-m">masculine</span>';
@@ -587,11 +733,13 @@ function showAnswer() {
     gWrap.innerHTML = "";
   }
 
+  // Notes
   const notesEl = document.getElementById("ans-notes");
   if (c.notes && c.notes !== "None" && c.notes.trim()) {
     notesEl.textContent = c.notes; notesEl.style.display = "block";
   } else { notesEl.style.display = "none"; }
 
+  // Examples
   const esEl = document.getElementById("ans-example-es");
   const enEl = document.getElementById("ans-example-en");
   if (c.example_es && c.example_es !== "None") {
@@ -605,7 +753,7 @@ function showAnswer() {
   document.getElementById("btn-show").style.display    = "none";
   document.getElementById("rating-area").style.display = "block";
 
-  if (mode === "en_es") callPronounce(spanishWord(c), "es");
+  if (mode === "en_es") callPronounce(c.spanish, "es");
 }
 
 function rate(rating) {
@@ -637,21 +785,13 @@ function sessionEnd() {
 
 function pronounce() {
   if (!curCard) return;
-  callPronounce(spanishWord(curCard), "es");
+  callPronounce(curCard.spanish, "es");
 }
 
 function setMode(m) {
   mode = m;
   document.getElementById("btn-es-en").classList.toggle("active", m === "es_en");
   document.getElementById("btn-en-es").classList.toggle("active", m === "en_es");
-}
-function setDialect(d) {
-  dialect = d;
-  document.getElementById("btn-dialect-es").classList.toggle("active", d === "es");
-  document.getElementById("btn-dialect-mx").classList.toggle("active", d === "mx");
-}
-function spanishWord(card) {
-  return (dialect === "mx" && card.spanish_mx) ? card.spanish_mx : card.spanish;
 }
 function setProg(pct, label, cor, wrg) {
   document.getElementById("prog-bar").style.width   = pct + "%";
@@ -703,118 +843,6 @@ document.addEventListener("keydown", e => {
 });
 
 init();
-
-// ── Tinder-style swipe ────────────────────────────────────────────────────────
-(function() {
-  const THRESHOLD = 80;
-  let startX = 0, startY = 0, curX = 0, curY = 0, active = false;
-
-  function getCard() { return document.getElementById("swipe-card"); }
-  function getIndL() { return document.getElementById("swipe-ind-l"); }
-  function getIndR() { return document.getElementById("swipe-ind-r"); }
-  function getIndU() { return document.getElementById("swipe-ind-u"); }
-  function getIndD() { return document.getElementById("swipe-ind-d"); }
-  function clearInds() {
-    getIndL().style.opacity = 0; getIndR().style.opacity = 0;
-    getIndU().style.opacity = 0; getIndD().style.opacity = 0;
-  }
-  function inSession() { return document.getElementById("card-wrap").style.display !== "none"; }
-
-  // Determine dominant swipe direction: "h" (horizontal) or "v" (vertical), null if ambiguous
-  function dominantAxis(dx, dy) {
-    if (Math.abs(dx) > Math.abs(dy) + 10) return "h";
-    if (Math.abs(dy) > Math.abs(dx) + 10) return "v";
-    return null;
-  }
-
-  function dragStart(x, y) {
-    if (!inSession()) return;
-    startX = curX = x;
-    startY = curY = y;
-    active = true;
-    getCard().style.transition = "none";
-    getCard().classList.add("is-dragging");
-  }
-
-  function dragMove(x, y) {
-    if (!active) return;
-    curX = x; curY = y;
-    const dx = x - startX, dy = y - startY;
-    const axis = dominantAxis(dx, dy);
-    const c = getCard();
-    clearInds();
-    if (axis === "h") {
-      c.style.transform = `translateX(${dx}px) rotate(${dx * 0.07}deg)`;
-      const op = Math.max(0, Math.min((Math.abs(dx) - 20) / 60, 1));
-      if (dx > 20)       getIndR().style.opacity = op;
-      else if (dx < -20) getIndL().style.opacity = op;
-    } else if (axis === "v") {
-      c.style.transform = `translateY(${dy}px)`;
-      const op = Math.max(0, Math.min((Math.abs(dy) - 20) / 60, 1));
-      if (dy < -20)      getIndU().style.opacity = op;
-      else if (dy > 20)  getIndD().style.opacity = op;
-    }
-  }
-
-  function animateOff(transform, rating) {
-    const c = getCard();
-    c.style.transition = "transform 0.4s ease";
-    c.style.transform  = transform;
-    setTimeout(() => { c.style.transition = "none"; c.style.transform = ""; rate(rating); }, 380);
-  }
-
-  function snapBack() {
-    const c = getCard();
-    c.style.transition = "transform 0.3s ease";
-    c.style.transform  = "";
-  }
-
-  function dragEnd() {
-    if (!active) return;
-    active = false;
-    const c = getCard();
-    c.classList.remove("is-dragging");
-    clearInds();
-    const dx = curX - startX, dy = curY - startY;
-    const axis = dominantAxis(dx, dy);
-
-    if (!answerShown) {
-      snapBack();
-      if (Math.abs(dx) > 20 || Math.abs(dy) > 20) showAnswer();
-      return;
-    }
-
-    if (axis === "h") {
-      if      (dx >  THRESHOLD) animateOff("translateX(130vw) rotate(30deg)",   4); // Easy
-      else if (dx < -THRESHOLD) animateOff("translateX(-130vw) rotate(-30deg)", 2); // Hard
-      else snapBack();
-    } else if (axis === "v") {
-      if      (dy < -THRESHOLD) animateOff("translateY(-130vh)",                3); // Good
-      else if (dy >  THRESHOLD) animateOff("translateY(130vh)",                 1); // Again
-      else snapBack();
-    } else {
-      snapBack();
-    }
-  }
-
-  // Touch
-  document.addEventListener("touchstart", e => {
-    if (e.target.closest("#swipe-card")) dragStart(e.touches[0].clientX, e.touches[0].clientY);
-  }, { passive: true });
-  document.addEventListener("touchmove", e => {
-    if (!active) return;
-    e.preventDefault();
-    dragMove(e.touches[0].clientX, e.touches[0].clientY);
-  }, { passive: false });
-  document.addEventListener("touchend", () => { if (active) dragEnd(); }, { passive: true });
-
-  // Mouse (desktop testing)
-  document.addEventListener("mousedown", e => {
-    if (e.target.closest("#swipe-card") && !e.target.closest("button")) dragStart(e.clientX, e.clientY);
-  });
-  document.addEventListener("mousemove", e => { if (active) dragMove(e.clientX, e.clientY); });
-  document.addEventListener("mouseup",   () => { if (active) dragEnd(); });
-})();
 </script>
 </body>
 </html>
@@ -822,3 +850,113 @@ init();
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=False)
+```
+
+**Step 2: Verify syntax**
+
+```bash
+cd /Users/wongshennan/Documents/personal/languages/spanish
+python3 -c "import spanish_anki; print('OK')"
+```
+
+Expected: `OK` with card count printed.
+
+**Step 3: Commit**
+
+```bash
+cd /Users/wongshennan/Documents/personal/languages
+git add spanish/spanish_anki.py
+git commit -m "feat: add Spanish Anki SPA with localStorage SM-2 and es-ES TTS"
+```
+
+---
+
+### Task 3: Add deployment files
+
+**Files:**
+- Create: `spanish/requirements.txt`
+- Create: `spanish/render.yaml`
+
+**Step 1: Create `spanish/requirements.txt`**
+
+```
+flask==3.1.0
+openpyxl==3.1.5
+gunicorn==23.0.0
+wordfreq==3.1.1
+anthropic==0.49.0
+```
+
+Note: `wordfreq` and `anthropic` are only needed for `build_vocab.py` (run locally), but including them doesn't harm the deployment and avoids a separate dev-requirements file.
+
+Actually — to keep the Render build lean, create a separate file:
+
+`spanish/requirements.txt` (for Render — runtime only):
+```
+flask==3.1.0
+openpyxl==3.1.5
+gunicorn==23.0.0
+```
+
+`spanish/requirements-build.txt` (for local vocab generation):
+```
+flask==3.1.0
+openpyxl==3.1.5
+gunicorn==23.0.0
+wordfreq==3.1.1
+anthropic==0.49.0
+```
+
+**Step 2: Create `spanish/render.yaml`**
+
+```yaml
+services:
+  - type: web
+    name: spanish-anki
+    runtime: python
+    rootDir: spanish
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn spanish_anki:app
+    plan: free
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+```
+
+**Step 3: Commit**
+
+```bash
+cd /Users/wongshennan/Documents/personal/languages
+git add spanish/requirements.txt spanish/requirements-build.txt spanish/render.yaml
+git commit -m "chore: add Spanish Anki Render deployment config"
+```
+
+---
+
+### Task 4: Push and deploy
+
+**Step 1: Push to GitHub**
+
+```bash
+cd /Users/wongshennan/Documents/personal/languages
+git push origin main
+```
+
+**Step 2: Deploy on Render**
+
+- render.com → New → Web Service → `codebyshennan/languages`
+- Root Directory: `spanish`
+- Build Command: `pip install -r requirements.txt`
+- Start Command: `gunicorn spanish_anki:app`
+- Plan: Free
+- Click Deploy
+
+**Step 3: Verify**
+
+Open the Render URL. Check:
+- Home screen loads with 3000 card counts
+- Start Session works, cards flip, rating saves to localStorage
+- Gender badge appears on noun cards
+- Notes row shows for irregular verbs
+- Pronounce button speaks Spanish
+- Stats modal shows category breakdown
