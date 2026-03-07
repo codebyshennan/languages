@@ -270,6 +270,116 @@ function closeStats() {
   document.getElementById("modal-overlay").classList.remove("open");
 }
 
+// ── Swipe ──────────────────────────────────────────────────────────────────
+function setupSwipe() {
+  var cardEl = document.querySelector('.card');
+  if (!cardEl) return;
+
+  // Inject swipe labels
+  function makeLabel(id, text) {
+    var el = document.createElement('div');
+    el.id = id; el.className = 'swipe-label'; el.textContent = text;
+    cardEl.appendChild(el); return el;
+  }
+  var labels = {
+    good:  makeLabel('swipe-good',  'GOOD'),
+    again: makeLabel('swipe-again', 'AGAIN'),
+    easy:  makeLabel('swipe-easy',  'EASY'),
+    hard:  makeLabel('swipe-hard',  'HARD'),
+  };
+
+  function clearLabels() {
+    for (var k in labels) labels[k].style.opacity = 0;
+  }
+
+  var startX = 0, startY = 0, axis = null, dragging = false;
+  var THRESHOLD = 90, AXIS_LOCK = 10;
+
+  cardEl.addEventListener('touchstart', function(e) {
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+    axis = null; dragging = true;
+    cardEl.style.transition = 'none';
+  }, { passive: true });
+
+  cardEl.addEventListener('touchmove', function(e) {
+    if (!dragging) return;
+    e.preventDefault();
+    var dx = e.touches[0].clientX - startX;
+    var dy = e.touches[0].clientY - startY;
+
+    // Lock axis once clear direction is established
+    if (!axis && (Math.abs(dx) > AXIS_LOCK || Math.abs(dy) > AXIS_LOCK)) {
+      axis = Math.abs(dx) >= Math.abs(dy) ? 'h' : 'v';
+    }
+    if (!axis) return;
+
+    var pct;
+    if (axis === 'h') {
+      var rotate = dx * 0.08;
+      cardEl.style.transform = 'translateX(' + dx + 'px) rotate(' + rotate + 'deg)';
+      pct = Math.min(Math.abs(dx) / THRESHOLD, 1);
+      clearLabels();
+      if (dx > 0) labels.good.style.opacity  = pct;
+      else        labels.again.style.opacity = pct;
+    } else {
+      cardEl.style.transform = 'translateY(' + dy + 'px)';
+      pct = Math.min(Math.abs(dy) / THRESHOLD, 1);
+      clearLabels();
+      if (dy < 0) labels.easy.style.opacity = pct;
+      else        labels.hard.style.opacity = pct;
+    }
+  }, { passive: false });
+
+  cardEl.addEventListener('touchend', function(e) {
+    if (!dragging) return;
+    dragging = false;
+    var dx = e.changedTouches[0].clientX - startX;
+    var dy = e.changedTouches[0].clientY - startY;
+    clearLabels();
+
+    if (!axis) return;
+
+    var delta    = axis === 'h' ? dx : dy;
+    var reached  = Math.abs(delta) >= THRESHOLD;
+
+    if (!reached) {
+      cardEl.style.transition = 'transform 0.25s ease';
+      cardEl.style.transform = '';
+      return;
+    }
+
+    if (!answerShown) {
+      // Any committed swipe reveals the answer
+      cardEl.style.transition = 'transform 0.25s ease';
+      cardEl.style.transform = '';
+      showAnswer();
+      return;
+    }
+
+    // Map direction to rating
+    var rating;
+    if      (axis === 'h' && dx > 0) rating = 3; // right → Good
+    else if (axis === 'h' && dx < 0) rating = 1; // left  → Again
+    else if (axis === 'v' && dy < 0) rating = 4; // up    → Easy
+    else                             rating = 2; // down  → Hard
+
+    // Fly off then rate
+    var flyX = axis === 'h' ? (dx > 0 ? 1 : -1) * window.innerWidth * 1.2 : 0;
+    var flyY = axis === 'v' ? (dy < 0 ? -1 : 1) * window.innerHeight       : 0;
+    var rot  = axis === 'h' ? (dx > 0 ? 20 : -20) : 0;
+    cardEl.style.transition = 'transform 0.25s ease, opacity 0.2s';
+    cardEl.style.transform  = 'translateX(' + flyX + 'px) translateY(' + flyY + 'px) rotate(' + rot + 'deg)';
+    cardEl.style.opacity    = '0';
+    setTimeout(function() {
+      cardEl.style.transition = 'none';
+      cardEl.style.transform  = '';
+      cardEl.style.opacity    = '';
+      rate(rating);
+    }, 250);
+  });
+}
+
 // ── Keyboard ───────────────────────────────────────────────────────────────
 document.addEventListener("keydown", function(e) {
   if (e.target.tagName === "SELECT") return;
@@ -302,6 +412,7 @@ async function init() {
   cfg.initUI(allCards, setMode);
   refreshOverview();
   showScreen("home");
+  setupSwipe();
 }
 
 // ── Expose globals for onclick= handlers ───────────────────────────────────
