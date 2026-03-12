@@ -116,13 +116,15 @@ def call_api(client, count: int, next_num: int, cats: list, dedup_sample: set) -
 
 
 def generate_batch(client, target_count: int, next_num: int,
-                   cats: list, cats_set: set, dedup: set) -> list:
+                   cats: list, cats_set: set, dedup: set) -> tuple:
     """Request words, validate, dedup. Retry for parse failures; accept shortfall for pure dups.
     API/network errors (RateLimitError, APIConnectionError) are NOT caught here — they propagate
     to main() which handles save+exit logic."""
     accepted = []
     remaining = target_count
     parse_retries = 0
+    total_dups = 0
+    total_parse_fails = 0
 
     while remaining > 0 and parse_retries <= MAX_RETRIES:
         try:
@@ -140,10 +142,12 @@ def generate_batch(client, target_count: int, next_num: int,
             valid, reason = validate_word(w, cats_set)
             if not valid:
                 parse_fail_count += 1
+                total_parse_fails += 1
                 continue
             norm = normalise(w["viet"])
             if norm in dedup:
                 dup_count += 1
+                total_dups += 1
                 continue
             dedup.add(norm)
             accepted.append(w)
@@ -161,7 +165,7 @@ def generate_batch(client, target_count: int, next_num: int,
             else:
                 break
 
-    return accepted
+    return accepted, total_dups, total_parse_fails
 
 
 def _get_retry_after(e: anthropic.RateLimitError, default: int = 10) -> int:
@@ -191,6 +195,8 @@ def main():
         dedup.add(normalise(w["viet"]))
     print(f"  Resuming from word {next_num} ({len(accepted)} already generated)")
 
+    total_dups = 0
+    total_parse_fails = 0
     while next_num <= TARGET_TOTAL:
         batch_size = min(BATCH_SIZE, TARGET_TOTAL - next_num + 1)
         print(f"\nBatch {next_num}–{next_num + batch_size - 1}…")
@@ -213,10 +219,13 @@ def main():
                 print(f"  Error: {e} — retrying in 10s…")
                 time.sleep(10)
 
-        accepted.extend(batch)
-        next_num += len(batch)
+        batch_words, batch_dups, batch_parse_fails = batch
+        accepted.extend(batch_words)
+        total_dups += batch_dups
+        total_parse_fails += batch_parse_fails
+        next_num += len(batch_words)
         save_progress({"accepted": accepted, "next_num": next_num})
-        print(f"  ✓ {len(batch)} accepted (total: {len(accepted)})")
+        print(f"  ✓ {len(batch_words)} accepted, {batch_dups} dups, {batch_parse_fails} parse fails (total: {len(accepted)})")
 
     # Write combined output
     print(f"\nWriting {OUTPUT_FILE}…")
@@ -236,6 +245,8 @@ def main():
     print(f"\n{'=' * 50}")
     print(f"Total rows written : {total_rows}")
     print(f"New words generated: {len(accepted)}")
+    print(f"Duplicates discarded: {total_dups}")
+    print(f"Parse failures     : {total_parse_fails}")
     if shortfall:
         print(f"Shortfall (dups)   : {shortfall}")
     print(f"By category        : {dict(cat_counts)}")

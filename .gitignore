@@ -7,3 +7,4 @@ viet_progress.json
 spanish/batch_*.json
 spanish/vocab_*.json
 spanish/enriched_*.json
+vietnamese/generate_progress.json
