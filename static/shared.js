@@ -488,9 +488,14 @@ async function init() {
   }
   cats.sort();
   var sel = document.getElementById("cat-select");
-  sel.innerHTML = '<option value="All">All categories</option>' +
-    cats.map(function(c) { return '<option>' + c + '</option>'; }).join("");
+  if (sel) {
+    sel.innerHTML = '<option value="All">All categories</option>' +
+      cats.map(function(c) { return '<option>' + c + '</option>'; }).join("");
+    sel.addEventListener("change", refreshOverview);
+  }
 
+  // migrateProgress() must run after allCards is populated (the await above guarantees this)
+  migrateProgress();
   cfg.initUI(allCards, setMode);
   refreshOverview();
   showScreen("home");
