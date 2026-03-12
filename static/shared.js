@@ -46,13 +46,93 @@ function cardStage(pd) {
 }
 
 // ── Storage ────────────────────────────────────────────────────────────────
-function loadProgress() {
-  try { return JSON.parse(localStorage.getItem(cfg.storageKey) || "{}"); }
-  catch (e) { return {}; }
+function getCatKey(cat) {
+  return cfg.storageKey + '_' + (cat || 'General');
+}
+function getCurrentCat() {
+  var sel = document.getElementById('cat-select');
+  return sel ? sel.value : 'All';
+}
+function getAllCategories() {
+  if (!allCards.length) { console.warn('getAllCategories: allCards not yet populated'); return []; }
+  var seen = {}, cats = [];
+  for (var i = 0; i < allCards.length; i++) {
+    var c = allCards[i].cat || 'General';
+    if (!seen[c]) { seen[c] = true; cats.push(c); }
+  }
+  return cats;
+}
+function loadProgress(forceAll) {
+  try {
+    var cat = forceAll ? 'All' : getCurrentCat();
+    if (cat === 'All') {
+      var merged = {};
+      var cats = getAllCategories();
+      for (var i = 0; i < cats.length; i++) {
+        var store = JSON.parse(localStorage.getItem(getCatKey(cats[i])) || '{}');
+        for (var k in store) merged[k] = store[k];
+      }
+      return merged;
+    }
+    return JSON.parse(localStorage.getItem(getCatKey(cat)) || '{}');
+  } catch (e) { return {}; }
 }
 function saveProgress(p) {
-  try { localStorage.setItem(cfg.storageKey, JSON.stringify(p)); }
-  catch (e) { console.warn("Could not save progress:", e); }
+  try {
+    var cat = getCurrentCat();
+    if (cat === 'All') {
+      var numToCat = {};
+      for (var i = 0; i < allCards.length; i++) {
+        numToCat[String(allCards[i].num)] = allCards[i].cat || 'General';
+      }
+      var catData = {};
+      for (var num in p) {
+        var c = numToCat[num];
+        if (c === undefined) { console.warn('saveProgress: unknown card', num, '→ General'); c = 'General'; }
+        if (!catData[c]) catData[c] = {};
+        catData[c][num] = p[num];
+      }
+      for (var c in catData) {
+        var key = getCatKey(c);
+        var existing = {};
+        try { existing = JSON.parse(localStorage.getItem(key) || '{}'); } catch (e2) {}
+        for (var k in catData[c]) existing[k] = catData[c][k];
+        localStorage.setItem(key, JSON.stringify(existing));
+      }
+    } else {
+      localStorage.setItem(getCatKey(cat), JSON.stringify(p));
+    }
+  } catch (e) { console.warn('Could not save progress:', e); }
+}
+function migrateProgress() {
+  if (localStorage.getItem(cfg.storageKey + '_migrated')) return;
+  var legacy = null;
+  try { legacy = JSON.parse(localStorage.getItem(cfg.storageKey) || 'null'); } catch (e) {}
+  if (!legacy || !Object.keys(legacy).length) {
+    localStorage.setItem(cfg.storageKey + '_migrated', '1');
+    return;
+  }
+  var numToCat = {};
+  for (var i = 0; i < allCards.length; i++) {
+    numToCat[String(allCards[i].num)] = allCards[i].cat || 'General';
+  }
+  var catData = {};
+  for (var num in legacy) {
+    var c = numToCat[num];
+    if (c === undefined) { console.warn('migrateProgress: unknown card', num, '→ General'); c = 'General'; }
+    if (!catData[c]) catData[c] = {};
+    catData[c][num] = legacy[num];
+  }
+  for (var c in catData) {
+    var key = getCatKey(c);
+    var existing = {};
+    try { existing = JSON.parse(localStorage.getItem(key) || '{}'); } catch (e) {}
+    for (var k in catData[c]) existing[k] = catData[c][k];
+    try { localStorage.setItem(key, JSON.stringify(existing)); } catch (e) { console.warn('Migration write failed for', c, e); }
+  }
+  // Write flag AFTER all per-category writes, BEFORE deleting legacy key
+  localStorage.setItem(cfg.storageKey + '_migrated', '1');
+  localStorage.removeItem(cfg.storageKey);
 }
 
 // ── TTS ────────────────────────────────────────────────────────────────────
