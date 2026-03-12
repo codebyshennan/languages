@@ -61,7 +61,10 @@ def _load_bahasa():
 
 
 def _load_viet():
-    src = BASE / "vietnamese" / "viet_vocab_COMPLETE_1962words.xlsx"
+    src = BASE / "vietnamese" / "viet_vocab_COMPLETE_3000words.xlsx"
+    if not src.exists():
+        src = BASE / "vietnamese" / "viet_vocab_COMPLETE_1962words.xlsx"
+        print("WARNING: 3000-word file not found, falling back to 1962-word file")
     print(f"Loading Viet vocab from {src}…")
     wb = openpyxl.load_workbook(src, read_only=True, data_only=True)
     ws = wb["📚 All Words (Combined)"]
