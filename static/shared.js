@@ -149,9 +149,11 @@ function callPronounce(text, lang) {
 // ── Overview ───────────────────────────────────────────────────────────────
 function computeOverview() {
   var p = loadProgress();
+  var cat = getCurrentCat();
+  var cards = (cat === 'All') ? allCards : allCards.filter(function(c) { return c.cat === cat; });
   var newC = 0, lrn = 0, review = 0, mature = 0, due = 0, cor = 0, wrg = 0;
-  for (var i = 0; i < allCards.length; i++) {
-    var c = allCards[i];
+  for (var i = 0; i < cards.length; i++) {
+    var c = cards[i];
     var pd = p[String(c.num)] || {};
     var stage = cardStage(pd);
     if      (stage === "new")      newC++;
@@ -162,7 +164,7 @@ function computeOverview() {
     cor += pd.correct || 0;
     wrg += pd.wrong   || 0;
   }
-  return { total: allCards.length, new: newC, learning: lrn, review: review,
+  return { total: cards.length, new: newC, learning: lrn, review: review,
            mature: mature, due: due, correct: cor, wrong: wrg,
            accuracy: (cor + wrg) ? Math.round(100 * cor / (cor + wrg)) : 0 };
 }
@@ -174,7 +176,7 @@ function refreshOverview() {
   document.getElementById("ov-mature").textContent = ov.mature;
 }
 function computeCatStats() {
-  var p = loadProgress();
+  var p = loadProgress(true);
   var cats = {};
   for (var i = 0; i < allCards.length; i++) {
     var c = allCards[i];
