@@ -105,11 +105,11 @@ function saveProgress(p) {
   } catch (e) { console.warn('Could not save progress:', e); }
 }
 function migrateProgress() {
-  if (localStorage.getItem(cfg.storageKey + '_migrated')) return;
+  if (localStorage.getItem(cfg.storageKey + '__migrated')) return;
   var legacy = null;
   try { legacy = JSON.parse(localStorage.getItem(cfg.storageKey) || 'null'); } catch (e) {}
   if (!legacy || !Object.keys(legacy).length) {
-    localStorage.setItem(cfg.storageKey + '_migrated', '1');
+    localStorage.setItem(cfg.storageKey + '__migrated', '1');
     return;
   }
   var numToCat = {};
@@ -131,7 +131,7 @@ function migrateProgress() {
     try { localStorage.setItem(key, JSON.stringify(existing)); } catch (e) { console.warn('Migration write failed for', c, e); }
   }
   // Write flag AFTER all per-category writes, BEFORE deleting legacy key
-  localStorage.setItem(cfg.storageKey + '_migrated', '1');
+  localStorage.setItem(cfg.storageKey + '__migrated', '1');
   localStorage.removeItem(cfg.storageKey);
 }
 
