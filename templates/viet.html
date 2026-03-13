@@ -219,9 +219,22 @@ window.LANG_CONFIG = {
     document.getElementById("btn-vi-en").classList.toggle("active", m === "vi_en");
     document.getElementById("btn-en-vi").classList.toggle("active", m === "en_vi");
     document.getElementById("btn-pron").classList.toggle("active", m === "pron");
+    // re-render current card if mid-session
+    var card = window._vietCurCard;
+    var cardWrap = document.getElementById("card-wrap");
+    if (card && cardWrap && cardWrap.style.display !== "none") {
+      var q = window.LANG_CONFIG.getQuestion(card, m);
+      document.getElementById("card-dir").textContent = q.dir;
+      document.getElementById("card-q").textContent   = q.text;
+      // hide answer area and reset to question state
+      document.getElementById("answer-area").style.display = "none";
+      document.getElementById("btn-show").style.display    = "block";
+      document.getElementById("rating-area").style.display = "none";
+    }
   },
 
   getQuestion: function(card, mode) {
+    window._vietCurCard = card;
     var partEl = document.getElementById("card-part");
     if (partEl) partEl.textContent = " \u00b7 " + card.part;
     // reset breakdown panel on each card load
