@@ -1,0 +1,925 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vietnamese Pronunciation Guide</title>
+  <link rel="stylesheet" href="/static/shared.css">
+  <script src="/static/viet_syllable.js"></script>
+  <style>
+    /* Page layout */
+    .pron-page {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 0 16px 48px;
+    }
+
+    /* Back link bar */
+    .back-bar {
+      background: var(--primary-dk);
+      padding: 8px 20px;
+    }
+    .back-bar a {
+      color: rgba(255,255,255,0.75);
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 600;
+      transition: color 0.2s;
+    }
+    .back-bar a:hover {
+      color: white;
+    }
+
+    /* Page title */
+    .page-title {
+      color: var(--primary);
+      font-size: 28px;
+      font-weight: 700;
+      margin: 28px 0 6px;
+    }
+    .page-subtitle {
+      color: var(--dgrey);
+      font-size: 14px;
+      margin-bottom: 28px;
+      line-height: 1.5;
+    }
+
+    /* Sections */
+    .section {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.07);
+      padding: 24px;
+      margin-bottom: 28px;
+    }
+    .section h2 {
+      color: var(--primary);
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 6px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid var(--lgrey);
+    }
+    .section-desc {
+      color: var(--dgrey);
+      font-size: 13px;
+      margin-bottom: 14px;
+      line-height: 1.5;
+    }
+
+    /* Reference tables */
+    .ref-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+    .ref-table th {
+      background: var(--primary);
+      color: white;
+      padding: 8px 12px;
+      text-align: left;
+      font-weight: 600;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+    .ref-table td {
+      padding: 9px 12px;
+      border-bottom: 1px solid #EEF2F6;
+      vertical-align: middle;
+    }
+    .ref-table tr:nth-child(even) td {
+      background: #F8FAFC;
+    }
+    .ref-table tr:hover td {
+      background: #EEF6FF;
+    }
+
+    /* Character/vowel cells */
+    .char-cell {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--primary);
+    }
+    .tone-num {
+      color: var(--dgrey);
+      font-weight: 600;
+    }
+    .tone-mark {
+      font-family: monospace;
+      font-size: 16px;
+      color: var(--dgrey);
+      background: var(--lgrey);
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+    .tone-name {
+      font-weight: 700;
+      font-size: 15px;
+    }
+    .pitch-desc {
+      color: #444;
+      font-size: 13px;
+    }
+    .example-word {
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--primary);
+    }
+    .notes-cell {
+      color: var(--dgrey);
+      font-size: 12px;
+    }
+    .approx-cell {
+      font-style: italic;
+      color: #444;
+      font-size: 13px;
+    }
+    .spelling-cell {
+      font-family: monospace;
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--primary);
+    }
+    .sound-cell {
+      font-family: monospace;
+      font-size: 13px;
+      color: #555;
+    }
+
+    /* TTS button */
+    .tts-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 18px;
+      padding: 4px 6px;
+      border-radius: 6px;
+      transition: background 0.15s;
+      line-height: 1;
+    }
+    .tts-btn:hover {
+      background: #D6EAF8;
+    }
+    .tts-btn:active {
+      background: #BDD4EB;
+    }
+
+    /* Vowel cluster grid */
+    .cluster-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+      gap: 10px;
+    }
+    .cluster-card {
+      background: var(--lgrey);
+      border-radius: 8px;
+      padding: 10px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+    }
+    .cluster-info {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+    }
+    .cluster-chars {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--primary);
+    }
+    .cluster-example {
+      font-size: 13px;
+      color: var(--dgrey);
+    }
+
+    /* Unreleased stop badge */
+    .badge-stop {
+      display: inline-block;
+      background: #FDECEA;
+      color: var(--red);
+      border-radius: 4px;
+      font-size: 11px;
+      padding: 1px 6px;
+      font-weight: 600;
+    }
+    .badge-nasal {
+      display: inline-block;
+      background: #EAF4EA;
+      color: var(--green);
+      border-radius: 4px;
+      font-size: 11px;
+      padding: 1px 6px;
+      font-weight: 600;
+    }
+
+    /* Key note box */
+    .key-note {
+      background: #FFF8E7;
+      border-left: 4px solid var(--amber);
+      border-radius: 4px;
+      padding: 10px 14px;
+      font-size: 13px;
+      color: #5a4000;
+      margin-bottom: 14px;
+      line-height: 1.5;
+    }
+
+    /* Responsive */
+    @media (max-width: 600px) {
+      .ref-table th:nth-child(3),
+      .ref-table td:nth-child(3) {
+        display: none;
+      }
+      .cluster-grid {
+        grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div id="topbar">
+  <h1>🇻🇳 Vietnamese Pronunciation Guide</h1>
+</div>
+
+<div class="back-bar">
+  <a href="/">← Back to flashcards</a>
+</div>
+
+<div class="pron-page">
+
+  <h1 class="page-title">Pronunciation Reference</h1>
+  <p class="page-subtitle">
+    A complete overview of Vietnamese tones, vowels, and consonants.
+    Click 🔉 on any row to hear the example word via text-to-speech.
+  </p>
+
+  <!-- ===================== 1. THE 6 TONES ===================== -->
+  <div class="section">
+    <h2>1. The 6 Tones</h2>
+    <p class="section-desc">
+      Vietnamese is a tonal language — the same syllable spoken with a different tone is an entirely different word.
+      All six tones are demonstrated using syllables based on <strong>ma</strong>.
+    </p>
+    <table class="ref-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Mark</th>
+          <th>Name</th>
+          <th>Pitch description</th>
+          <th>Example</th>
+          <th>🔉</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="tone-num">1</td>
+          <td><span class="tone-mark">(none)</span></td>
+          <td class="tone-name" style="color:#777">ngang</td>
+          <td class="pitch-desc">Mid level, steady</td>
+          <td class="example-word">ma</td>
+          <td><button class="tts-btn" onclick="VietSyllable.callPronounce('ma', 'vi-VN')">🔉</button></td>
+        </tr>
+        <tr>
+          <td class="tone-num">2</td>
+          <td><span class="tone-mark">` (grave)</span></td>
+          <td class="tone-name" style="color:#1a6fbf">huyền</td>
+          <td class="pitch-desc">Low falling, breathy</td>
+          <td class="example-word">mà</td>
+          <td><button class="tts-btn" onclick="VietSyllable.callPronounce('mà', 'vi-VN')">🔉</button></td>
+        </tr>
+        <tr>
+          <td class="tone-num">3</td>
+          <td><span class="tone-mark">? (hook)</span></td>
+          <td class="tone-name" style="color:#2a9d4e">hỏi</td>
+          <td class="pitch-desc">Mid dipping then rising</td>
+          <td class="example-word">mả</td>
+          <td><button class="tts-btn" onclick="VietSyllable.callPronounce('mả', 'vi-VN')">🔉</button></td>
+        </tr>
+        <tr>
+          <td class="tone-num">4</td>
+          <td><span class="tone-mark">~ (tilde)</span></td>
+          <td class="tone-name" style="color:#8b4fbf">ngã</td>
+          <td class="pitch-desc">Mid rising, creaky/glottal</td>
+          <td class="example-word">mã</td>
+          <td><button class="tts-btn" onclick="VietSyllable.callPronounce('mã', 'vi-VN')">🔉</button></td>
+        </tr>
+        <tr>
+          <td class="tone-num">5</td>
+          <td><span class="tone-mark">´ (acute)</span></td>
+          <td class="tone-name" style="color:#cc2233">sắc</td>
+          <td class="pitch-desc">High rising</td>
+          <td class="example-word">má</td>
+          <td><button class="tts-btn" onclick="VietSyllable.callPronounce('má', 'vi-VN')">🔉</button></td>
+        </tr>
+        <tr>
+          <td class="tone-num">6</td>
+          <td><span class="tone-mark">. (dot below)</span></td>
+          <td class="tone-name" style="color:#7a3000">nặng</td>
+          <td class="pitch-desc">Low falling, heavy/cut short</td>
+          <td class="example-word">mạ</td>
+          <td><button class="tts-btn" onclick="VietSyllable.callPronounce('mạ', 'vi-VN')">🔉</button></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ===================== 2. SIMPLE VOWELS ===================== -->
+  <div class="section">
+    <h2>2. Simple Vowels</h2>
+    <p class="section-desc">
+      Vietnamese has 12 simple vowels. Several use diacritics to distinguish them from similar sounds —
+      the diacritics on vowels indicate vowel quality, not tone.
+    </p>
+    <table class="ref-table">
+      <thead>
+        <tr>
+          <th>Vowel</th>
+          <th>Name</th>
+          <th>Approx. English</th>
+          <th>Example</th>
+          <th>🔉</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="char-cell">a</td>
+          <td>'ah'</td>
+          <td class="approx-cell">"father"</td>
+          <td class="example-word">ba</td>
+          <td><button class="tts-btn" onclick="VietSyllable.callPronounce('ba', 'vi-VN')">🔉</button></td>
+        </tr>
+        <tr>
+          <td class="char-cell">ă</td>
+          <td>short 'a'</td>
+          <td class="approx-cell">shorter "ah"</td>
+          <td class="example-word">băng</td>
+          <td><button class="tts-btn" onclick="VietSyllable.callPronounce('băng', 'vi-VN')">🔉</button></td>
+        </tr>
+        <tr>
+          <td class="char-cell">â</td>
+          <td>'uh'</td>
+          <td class="approx-cell">"about"</td>
+          <td class="example-word">bân</td>
+          <td><button class="tts-btn" onclick="VietSyllable.callPronounce('bân', 'vi-VN')">🔉</button></td>
+        </tr>
+        <tr>
+          <td class="char-cell">e</td>
+          <td>'eh'</td>
+          <td class="approx-cell">"bed"</td>
+          <td class="example-word">be</td>
+          <td><button class="tts-btn" onclick="VietSyllable.callPronounce('be', 'vi-VN')">🔉</button></td>
+        </tr>
+        <tr>
+          <td class="char-cell">ê</td>
+          <td>'ay'</td>
+          <td class="approx-cell">"bay"</td>
+          <td class="example-word">bê</td>
+          <td><button class="tts-btn" onclick="VietSyllable.callPronounce('bê', 'vi-VN')">🔉</button></td>
+        </tr>
+        <tr>
+          <td class="char-cell">i</td>
+          <td>'ee'</td>
+          <td class="approx-cell">"bee"</td>
+          <td class="example-word">bi</td>
+          <td><button class="tts-btn" onclick="VietSyllable.callPronounce('bi', 'vi-VN')">🔉</button></td>
+        </tr>
+        <tr>
+          <td class="char-cell">y</td>
+          <td>'ee' (formal)</td>
+          <td class="approx-cell">"bee"</td>
+          <td class="example-word">ty</td>
+          <td><button class="tts-btn" onclick="VietSyllable.callPronounce('ty', 'vi-VN')">🔉</button></td>
+        </tr>
+        <tr>
+          <td class="char-cell">o</td>
+          <td>'aw'</td>
+          <td class="approx-cell">"law"</td>
+          <td class="example-word">bo</td>
+          <td><button class="tts-btn" onclick="VietSyllable.callPronounce('bo', 'vi-VN')">🔉</button></td>
+        </tr>
+        <tr>
+          <td class="char-cell">ô</td>
+          <td>'oh'</td>
+          <td class="approx-cell">"boat"</td>
+          <td class="example-word">bô</td>
+          <td><button class="tts-btn" onclick="VietSyllable.callPronounce('bô', 'vi-VN')">🔉</button></td>
+        </tr>
+        <tr>
+          <td class="char-cell">ơ</td>
+          <td>'er'</td>
+          <td class="approx-cell">"bird" (no R)</td>
+          <td class="example-word">bơ</td>
+          <td><button class="tts-btn" onclick="VietSyllable.callPronounce('bơ', 'vi-VN')">🔉</button></td>
+        </tr>
+        <tr>
+          <td class="char-cell">u</td>
+          <td>'oo'</td>
+          <td class="approx-cell">"boot"</td>
+          <td class="example-word">bu</td>
+          <td><button class="tts-btn" onclick="VietSyllable.callPronounce('bu', 'vi-VN')">🔉</button></td>
+        </tr>
+        <tr>
+          <td class="char-cell">ư</td>
+          <td>'uh'</td>
+          <td class="approx-cell">"boot" (unrounded)</td>
+          <td class="example-word">bư</td>
+          <td><button class="tts-btn" onclick="VietSyllable.callPronounce('bư', 'vi-VN')">🔉</button></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ===================== 3. VOWEL CLUSTERS ===================== -->
+  <div class="section">
+    <h2>3. Vowel Clusters</h2>
+    <p class="section-desc">
+      Common vowel combinations that form a single nucleus in a Vietnamese syllable.
+      Each cluster has a characteristic glide or diphthong shape.
+    </p>
+    <div class="cluster-grid">
+
+      <div class="cluster-card">
+        <div class="cluster-info">
+          <span class="cluster-chars">ai</span>
+          <span class="cluster-example">tài</span>
+        </div>
+        <button class="tts-btn" onclick="VietSyllable.callPronounce('tài', 'vi-VN')">🔉</button>
+      </div>
+
+      <div class="cluster-card">
+        <div class="cluster-info">
+          <span class="cluster-chars">ao</span>
+          <span class="cluster-example">cao</span>
+        </div>
+        <button class="tts-btn" onclick="VietSyllable.callPronounce('cao', 'vi-VN')">🔉</button>
+      </div>
+
+      <div class="cluster-card">
+        <div class="cluster-info">
+          <span class="cluster-chars">au</span>
+          <span class="cluster-example">màu</span>
+        </div>
+        <button class="tts-btn" onclick="VietSyllable.callPronounce('màu', 'vi-VN')">🔉</button>
+      </div>
+
+      <div class="cluster-card">
+        <div class="cluster-info">
+          <span class="cluster-chars">ay</span>
+          <span class="cluster-example">tay</span>
+        </div>
+        <button class="tts-btn" onclick="VietSyllable.callPronounce('tay', 'vi-VN')">🔉</button>
+      </div>
+
+      <div class="cluster-card">
+        <div class="cluster-info">
+          <span class="cluster-chars">eo</span>
+          <span class="cluster-example">keo</span>
+        </div>
+        <button class="tts-btn" onclick="VietSyllable.callPronounce('keo', 'vi-VN')">🔉</button>
+      </div>
+
+      <div class="cluster-card">
+        <div class="cluster-info">
+          <span class="cluster-chars">ia</span>
+          <span class="cluster-example">tia</span>
+        </div>
+        <button class="tts-btn" onclick="VietSyllable.callPronounce('tia', 'vi-VN')">🔉</button>
+      </div>
+
+      <div class="cluster-card">
+        <div class="cluster-info">
+          <span class="cluster-chars">iê</span>
+          <span class="cluster-example">tiên</span>
+        </div>
+        <button class="tts-btn" onclick="VietSyllable.callPronounce('tiên', 'vi-VN')">🔉</button>
+      </div>
+
+      <div class="cluster-card">
+        <div class="cluster-info">
+          <span class="cluster-chars">oa</span>
+          <span class="cluster-example">hoa</span>
+        </div>
+        <button class="tts-btn" onclick="VietSyllable.callPronounce('hoa', 'vi-VN')">🔉</button>
+      </div>
+
+      <div class="cluster-card">
+        <div class="cluster-info">
+          <span class="cluster-chars">oe</span>
+          <span class="cluster-example">khoe</span>
+        </div>
+        <button class="tts-btn" onclick="VietSyllable.callPronounce('khoe', 'vi-VN')">🔉</button>
+      </div>
+
+      <div class="cluster-card">
+        <div class="cluster-info">
+          <span class="cluster-chars">oi</span>
+          <span class="cluster-example">boi</span>
+        </div>
+        <button class="tts-btn" onclick="VietSyllable.callPronounce('boi', 'vi-VN')">🔉</button>
+      </div>
+
+      <div class="cluster-card">
+        <div class="cluster-info">
+          <span class="cluster-chars">ôi</span>
+          <span class="cluster-example">tôi</span>
+        </div>
+        <button class="tts-btn" onclick="VietSyllable.callPronounce('tôi', 'vi-VN')">🔉</button>
+      </div>
+
+      <div class="cluster-card">
+        <div class="cluster-info">
+          <span class="cluster-chars">ơi</span>
+          <span class="cluster-example">trời</span>
+        </div>
+        <button class="tts-btn" onclick="VietSyllable.callPronounce('trời', 'vi-VN')">🔉</button>
+      </div>
+
+      <div class="cluster-card">
+        <div class="cluster-info">
+          <span class="cluster-chars">ua</span>
+          <span class="cluster-example">tua</span>
+        </div>
+        <button class="tts-btn" onclick="VietSyllable.callPronounce('tua', 'vi-VN')">🔉</button>
+      </div>
+
+      <div class="cluster-card">
+        <div class="cluster-info">
+          <span class="cluster-chars">uô</span>
+          <span class="cluster-example">muôn</span>
+        </div>
+        <button class="tts-btn" onclick="VietSyllable.callPronounce('muôn', 'vi-VN')">🔉</button>
+      </div>
+
+      <div class="cluster-card">
+        <div class="cluster-info">
+          <span class="cluster-chars">ưa</span>
+          <span class="cluster-example">mưa</span>
+        </div>
+        <button class="tts-btn" onclick="VietSyllable.callPronounce('mưa', 'vi-VN')">🔉</button>
+      </div>
+
+      <div class="cluster-card">
+        <div class="cluster-info">
+          <span class="cluster-chars">ươ</span>
+          <span class="cluster-example">vườn</span>
+        </div>
+        <button class="tts-btn" onclick="VietSyllable.callPronounce('vườn', 'vi-VN')">🔉</button>
+      </div>
+
+      <div class="cluster-card">
+        <div class="cluster-info">
+          <span class="cluster-chars">uê</span>
+          <span class="cluster-example">tuế</span>
+        </div>
+        <button class="tts-btn" onclick="VietSyllable.callPronounce('tuế', 'vi-VN')">🔉</button>
+      </div>
+
+      <div class="cluster-card">
+        <div class="cluster-info">
+          <span class="cluster-chars">uy</span>
+          <span class="cluster-example">túy</span>
+        </div>
+        <button class="tts-btn" onclick="VietSyllable.callPronounce('túy', 'vi-VN')">🔉</button>
+      </div>
+
+      <div class="cluster-card">
+        <div class="cluster-info">
+          <span class="cluster-chars">oai</span>
+          <span class="cluster-example">ngoài</span>
+        </div>
+        <button class="tts-btn" onclick="VietSyllable.callPronounce('ngoài', 'vi-VN')">🔉</button>
+      </div>
+
+      <div class="cluster-card">
+        <div class="cluster-info">
+          <span class="cluster-chars">oay</span>
+          <span class="cluster-example">xoay</span>
+        </div>
+        <button class="tts-btn" onclick="VietSyllable.callPronounce('xoay', 'vi-VN')">🔉</button>
+      </div>
+
+      <div class="cluster-card">
+        <div class="cluster-info">
+          <span class="cluster-chars">uôi</span>
+          <span class="cluster-example">buổi</span>
+        </div>
+        <button class="tts-btn" onclick="VietSyllable.callPronounce('buổi', 'vi-VN')">🔉</button>
+      </div>
+
+      <div class="cluster-card">
+        <div class="cluster-info">
+          <span class="cluster-chars">ươi</span>
+          <span class="cluster-example">người</span>
+        </div>
+        <button class="tts-btn" onclick="VietSyllable.callPronounce('người', 'vi-VN')">🔉</button>
+      </div>
+
+      <div class="cluster-card">
+        <div class="cluster-info">
+          <span class="cluster-chars">ươu</span>
+          <span class="cluster-example">hươu</span>
+        </div>
+        <button class="tts-btn" onclick="VietSyllable.callPronounce('hươu', 'vi-VN')">🔉</button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ===================== 4. INITIAL CONSONANTS ===================== -->
+  <div class="section">
+    <h2>4. Initial Consonants</h2>
+    <p class="section-desc">
+      Vietnamese spelling uses several digraphs and letters with non-obvious pronunciations.
+      Regional variation between Northern (Hanoi) and Southern (Ho Chi Minh City) dialects is significant.
+    </p>
+    <table class="ref-table">
+      <thead>
+        <tr>
+          <th>Spelling</th>
+          <th>Approx. sound</th>
+          <th>Notes</th>
+          <th>Example</th>
+          <th>🔉</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="spelling-cell">b</td>
+          <td class="sound-cell">"b"</td>
+          <td class="notes-cell">—</td>
+          <td class="example-word">ba</td>
+          <td><button class="tts-btn" onclick="VietSyllable.callPronounce('ba', 'vi-VN')">🔉</button></td>
+        </tr>
+        <tr>
+          <td class="spelling-cell">c</td>
+          <td class="sound-cell">"k"</td>
+          <td class="notes-cell">Before a / o / u</td>
+          <td class="example-word">cá</td>
+          <td><button class="tts-btn" onclick="VietSyllable.callPronounce('cá', 'vi-VN')">🔉</button></td>
+        </tr>
+        <tr>
+          <td class="spelling-cell">ch</td>
+          <td class="sound-cell">"ch"</td>
+          <td class="notes-cell">Like "church"</td>
+          <td class="example-word">cha</td>
+          <td><button class="tts-btn" onclick="VietSyllable.callPronounce('cha', 'vi-VN')">🔉</button></td>
+        </tr>
+        <tr>
+          <td class="spelling-cell">d</td>
+          <td class="sound-cell">"y" (S) / "z" (N)</td>
+          <td class="notes-cell">Regional — "y" in south, "z" in north</td>
+          <td class="example-word">da</td>
+          <td><button class="tts-btn" onclick="VietSyllable.callPronounce('da', 'vi-VN')">🔉</button></td>
+        </tr>
+        <tr>
+          <td class="spelling-cell">đ</td>
+          <td class="sound-cell">"d"</td>
+          <td class="notes-cell">Retroflex D — distinct from d</td>
+          <td class="example-word">đi</td>
+          <td><button class="tts-btn" onclick="VietSyllable.callPronounce('đi', 'vi-VN')">🔉</button></td>
+        </tr>
+        <tr>
+          <td class="spelling-cell">g</td>
+          <td class="sound-cell">"g"</td>
+          <td class="notes-cell">Before a / o / u</td>
+          <td class="example-word">ga</td>
+          <td><button class="tts-btn" onclick="VietSyllable.callPronounce('ga', 'vi-VN')">🔉</button></td>
+        </tr>
+        <tr>
+          <td class="spelling-cell">gh</td>
+          <td class="sound-cell">"g"</td>
+          <td class="notes-cell">Before e / ê / i (spelling rule only)</td>
+          <td class="example-word">ghe</td>
+          <td><button class="tts-btn" onclick="VietSyllable.callPronounce('ghe', 'vi-VN')">🔉</button></td>
+        </tr>
+        <tr>
+          <td class="spelling-cell">gi</td>
+          <td class="sound-cell">"y" (S) / "z" (N)</td>
+          <td class="notes-cell">Like d, regional variation</td>
+          <td class="example-word">gia</td>
+          <td><button class="tts-btn" onclick="VietSyllable.callPronounce('gia', 'vi-VN')">🔉</button></td>
+        </tr>
+        <tr>
+          <td class="spelling-cell">h</td>
+          <td class="sound-cell">"h"</td>
+          <td class="notes-cell">—</td>
+          <td class="example-word">ha</td>
+          <td><button class="tts-btn" onclick="VietSyllable.callPronounce('ha', 'vi-VN')">🔉</button></td>
+        </tr>
+        <tr>
+          <td class="spelling-cell">k</td>
+          <td class="sound-cell">"k"</td>
+          <td class="notes-cell">Before e / ê / i</td>
+          <td class="example-word">kê</td>
+          <td><button class="tts-btn" onclick="VietSyllable.callPronounce('kê', 'vi-VN')">🔉</button></td>
+        </tr>
+        <tr>
+          <td class="spelling-cell">kh</td>
+          <td class="sound-cell">"kh"</td>
+          <td class="notes-cell">Aspirated / fricative k</td>
+          <td class="example-word">không</td>
+          <td><button class="tts-btn" onclick="VietSyllable.callPronounce('không', 'vi-VN')">🔉</button></td>
+        </tr>
+        <tr>
+          <td class="spelling-cell">l</td>
+          <td class="sound-cell">"l"</td>
+          <td class="notes-cell">—</td>
+          <td class="example-word">la</td>
+          <td><button class="tts-btn" onclick="VietSyllable.callPronounce('la', 'vi-VN')">🔉</button></td>
+        </tr>
+        <tr>
+          <td class="spelling-cell">m</td>
+          <td class="sound-cell">"m"</td>
+          <td class="notes-cell">—</td>
+          <td class="example-word">ma</td>
+          <td><button class="tts-btn" onclick="VietSyllable.callPronounce('ma', 'vi-VN')">🔉</button></td>
+        </tr>
+        <tr>
+          <td class="spelling-cell">n</td>
+          <td class="sound-cell">"n"</td>
+          <td class="notes-cell">—</td>
+          <td class="example-word">na</td>
+          <td><button class="tts-btn" onclick="VietSyllable.callPronounce('na', 'vi-VN')">🔉</button></td>
+        </tr>
+        <tr>
+          <td class="spelling-cell">ng</td>
+          <td class="sound-cell">"ng"</td>
+          <td class="notes-cell">As in "sing" — can begin a syllable</td>
+          <td class="example-word">nga</td>
+          <td><button class="tts-btn" onclick="VietSyllable.callPronounce('nga', 'vi-VN')">🔉</button></td>
+        </tr>
+        <tr>
+          <td class="spelling-cell">ngh</td>
+          <td class="sound-cell">"ng"</td>
+          <td class="notes-cell">Before e / ê / i (spelling rule only)</td>
+          <td class="example-word">nghe</td>
+          <td><button class="tts-btn" onclick="VietSyllable.callPronounce('nghe', 'vi-VN')">🔉</button></td>
+        </tr>
+        <tr>
+          <td class="spelling-cell">nh</td>
+          <td class="sound-cell">"ny"</td>
+          <td class="notes-cell">Like "canyon" / Spanish ñ</td>
+          <td class="example-word">nhà</td>
+          <td><button class="tts-btn" onclick="VietSyllable.callPronounce('nhà', 'vi-VN')">🔉</button></td>
+        </tr>
+        <tr>
+          <td class="spelling-cell">p</td>
+          <td class="sound-cell">"p"</td>
+          <td class="notes-cell">Rare in initial position</td>
+          <td class="example-word">pin</td>
+          <td><button class="tts-btn" onclick="VietSyllable.callPronounce('pin', 'vi-VN')">🔉</button></td>
+        </tr>
+        <tr>
+          <td class="spelling-cell">ph</td>
+          <td class="sound-cell">"f"</td>
+          <td class="notes-cell">Like English "f"</td>
+          <td class="example-word">phở</td>
+          <td><button class="tts-btn" onclick="VietSyllable.callPronounce('phở', 'vi-VN')">🔉</button></td>
+        </tr>
+        <tr>
+          <td class="spelling-cell">qu</td>
+          <td class="sound-cell">"kw"</td>
+          <td class="notes-cell">Always followed by a vowel</td>
+          <td class="example-word">quà</td>
+          <td><button class="tts-btn" onclick="VietSyllable.callPronounce('quà', 'vi-VN')">🔉</button></td>
+        </tr>
+        <tr>
+          <td class="spelling-cell">r</td>
+          <td class="sound-cell">"r / z / d"</td>
+          <td class="notes-cell">Highly regional — trilled, retroflex, or fricative</td>
+          <td class="example-word">ra</td>
+          <td><button class="tts-btn" onclick="VietSyllable.callPronounce('ra', 'vi-VN')">🔉</button></td>
+        </tr>
+        <tr>
+          <td class="spelling-cell">s</td>
+          <td class="sound-cell">"s" (S) / "sh" (N)</td>
+          <td class="notes-cell">Regional variation</td>
+          <td class="example-word">sa</td>
+          <td><button class="tts-btn" onclick="VietSyllable.callPronounce('sa', 'vi-VN')">🔉</button></td>
+        </tr>
+        <tr>
+          <td class="spelling-cell">t</td>
+          <td class="sound-cell">"t"</td>
+          <td class="notes-cell">Unaspirated (no puff)</td>
+          <td class="example-word">ta</td>
+          <td><button class="tts-btn" onclick="VietSyllable.callPronounce('ta', 'vi-VN')">🔉</button></td>
+        </tr>
+        <tr>
+          <td class="spelling-cell">th</td>
+          <td class="sound-cell">"t'" (aspirated)</td>
+          <td class="notes-cell">Strongly aspirated T</td>
+          <td class="example-word">thì</td>
+          <td><button class="tts-btn" onclick="VietSyllable.callPronounce('thì', 'vi-VN')">🔉</button></td>
+        </tr>
+        <tr>
+          <td class="spelling-cell">tr</td>
+          <td class="sound-cell">"ch" (S) / "tr" (N)</td>
+          <td class="notes-cell">Regional — merges with ch in south</td>
+          <td class="example-word">trà</td>
+          <td><button class="tts-btn" onclick="VietSyllable.callPronounce('trà', 'vi-VN')">🔉</button></td>
+        </tr>
+        <tr>
+          <td class="spelling-cell">v</td>
+          <td class="sound-cell">"v" (S) / "y" (N)</td>
+          <td class="notes-cell">Regional variation</td>
+          <td class="example-word">và</td>
+          <td><button class="tts-btn" onclick="VietSyllable.callPronounce('và', 'vi-VN')">🔉</button></td>
+        </tr>
+        <tr>
+          <td class="spelling-cell">x</td>
+          <td class="sound-cell">"s"</td>
+          <td class="notes-cell">Always /s/, not /ks/</td>
+          <td class="example-word">xa</td>
+          <td><button class="tts-btn" onclick="VietSyllable.callPronounce('xa', 'vi-VN')">🔉</button></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ===================== 5. FINAL CONSONANTS ===================== -->
+  <div class="section">
+    <h2>5. Final Consonants</h2>
+    <div class="key-note">
+      <strong>Key point:</strong> The stops <strong>-c, -ch, -p, -t</strong> are <em>unreleased</em> — there is no puff of air at the end.
+      The nasals <strong>-ng</strong> and <strong>-nh</strong> nasalise the preceding vowel rather than being strongly articulated.
+    </div>
+    <table class="ref-table">
+      <thead>
+        <tr>
+          <th>Spelling</th>
+          <th>Type</th>
+          <th>Notes</th>
+          <th>Example</th>
+          <th>🔉</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="spelling-cell">-c</td>
+          <td><span class="badge-stop">unreleased stop</span></td>
+          <td class="notes-cell">No audible release burst</td>
+          <td class="example-word">học</td>
+          <td><button class="tts-btn" onclick="VietSyllable.callPronounce('học', 'vi-VN')">🔉</button></td>
+        </tr>
+        <tr>
+          <td class="spelling-cell">-ch</td>
+          <td><span class="badge-stop">unreleased stop</span></td>
+          <td class="notes-cell">Palatal — like -k but further forward</td>
+          <td class="example-word">sách</td>
+          <td><button class="tts-btn" onclick="VietSyllable.callPronounce('sách', 'vi-VN')">🔉</button></td>
+        </tr>
+        <tr>
+          <td class="spelling-cell">-m</td>
+          <td><span class="badge-nasal">nasal</span></td>
+          <td class="notes-cell">Bilabial nasal</td>
+          <td class="example-word">cam</td>
+          <td><button class="tts-btn" onclick="VietSyllable.callPronounce('cam', 'vi-VN')">🔉</button></td>
+        </tr>
+        <tr>
+          <td class="spelling-cell">-n</td>
+          <td><span class="badge-nasal">nasal</span></td>
+          <td class="notes-cell">Alveolar nasal</td>
+          <td class="example-word">can</td>
+          <td><button class="tts-btn" onclick="VietSyllable.callPronounce('can', 'vi-VN')">🔉</button></td>
+        </tr>
+        <tr>
+          <td class="spelling-cell">-ng</td>
+          <td><span class="badge-nasal">nasal</span></td>
+          <td class="notes-cell">Nasalises preceding vowel; velar nasal</td>
+          <td class="example-word">sang</td>
+          <td><button class="tts-btn" onclick="VietSyllable.callPronounce('sang', 'vi-VN')">🔉</button></td>
+        </tr>
+        <tr>
+          <td class="spelling-cell">-nh</td>
+          <td><span class="badge-nasal">nasal</span></td>
+          <td class="notes-cell">Nasalises vowel; palatal nasal</td>
+          <td class="example-word">anh</td>
+          <td><button class="tts-btn" onclick="VietSyllable.callPronounce('anh', 'vi-VN')">🔉</button></td>
+        </tr>
+        <tr>
+          <td class="spelling-cell">-p</td>
+          <td><span class="badge-stop">unreleased stop</span></td>
+          <td class="notes-cell">Lips close but do not pop open</td>
+          <td class="example-word">hợp</td>
+          <td><button class="tts-btn" onclick="VietSyllable.callPronounce('hợp', 'vi-VN')">🔉</button></td>
+        </tr>
+        <tr>
+          <td class="spelling-cell">-t</td>
+          <td><span class="badge-stop">unreleased stop</span></td>
+          <td class="notes-cell">Tongue contacts roof but no burst</td>
+          <td class="example-word">hát</td>
+          <td><button class="tts-btn" onclick="VietSyllable.callPronounce('hát', 'vi-VN')">🔉</button></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</div><!-- /.pron-page -->
+
+</body>
+</html>
