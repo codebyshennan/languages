@@ -20,7 +20,7 @@ All changes are frontend-only. No backend schema changes required beyond one new
 
 ### New files
 - `templates/viet_pronunciation.html` — standalone reference page
-- `static/viet_syllable.js` — shared Vietnamese syllable parser (no dependencies); also exports a `callPronounce(text, lang)` helper (guards `window.speechSynthesis`) so the reference page can use TTS without loading `shared.js`
+- `static/viet_syllable.js` — shared Vietnamese syllable parser (no dependencies); also exports a `callPronounce(text, lang)` helper that guards `window.speechSynthesis` and passes `text` **directly** to `SpeechSynthesisUtterance` without any character stripping — tone diacritics must be preserved for correct Vietnamese TTS. (Unlike `shared.js`'s version which strips `'`, `"`, `/`.)
 
 ### Modified files
 - `vietnamese/viet_anki.py` — add `/pronunciation` route using the same `Path.read_text()` pattern as the existing `/` route (not `render_template`); define `PRON_TEMPLATE = BASE.parent / "templates" / "viet_pronunciation.html"` and return `PRON_TEMPLATE.read_text()`
@@ -130,6 +130,7 @@ Key point: `-c, -ch, -p, -t` are unreleased stops (no puff of air). `-ng, -nh` n
 - **EN→VI mode**: visible only after answer reveal (before reveal, the breakdown would expose the Vietnamese answer)
 - **PRON mode**: always visible, auto-expanded (see Pronunciation Mode below)
 - Label: `🔉 Break Down` — keyboard shortcut `B` (wired via `cfg.handleExtraKeys` in `viet.html`, not in `shared.js`)
+- Since `answerShown` is private to `shared.js`'s IIFE and not passed to `handleExtraKeys`, the `B` key handler must check the DOM to decide whether to act. Specifically: if the `#btn-breakdown` button has `display: none` (i.e. we are in EN→VI mode before answer reveal), the handler must no-op. This avoids needing a shadow variable or changes to `shared.js`.
 - Expands/collapses a `#breakdown-panel` div below the answer area
 - Panel renders one row per syllable:
 
