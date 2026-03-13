@@ -17,7 +17,7 @@ SRC  = BASE / "viet_vocab_COMPLETE_1962words.xlsx"
 TEMPLATE      = BASE.parent / "templates" / "viet.html"
 PRON_TEMPLATE = BASE.parent / "templates" / "viet_pronunciation.html"
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder=str(BASE.parent / "static"), static_url_path="/static")
 
 # ── Load vocab ────────────────────────────────────────────────────────────────
 def load_vocab():
