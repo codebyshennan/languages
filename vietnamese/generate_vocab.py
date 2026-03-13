@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """
-generate_vocab.py — Generate ~1,038 B2-level Vietnamese words via Claude API.
+generate_vocab.py — Generate ~1,038 B2-level Vietnamese words via OpenRouter (Claude).
 
 Combines with the existing 1,962 words to produce viet_vocab_COMPLETE_3000words.xlsx.
 
 Usage:
-    ANTHROPIC_API_KEY=<key> python3 generate_vocab.py
+    OPENROUTER_API_KEY=<key> python3 generate_vocab.py
 
 Resumable: saves progress to generate_progress.json after each batch.
 Re-running after interruption continues from where it left off.
@@ -18,7 +18,7 @@ import time
 from collections import Counter
 from pathlib import Path
 
-import anthropic
+import openai
 import openpyxl
 
 BASE          = Path(__file__).parent
@@ -27,7 +27,7 @@ OUTPUT_FILE   = BASE / "viet_vocab_COMPLETE_3000words.xlsx"
 PROGRESS_FILE = BASE / "generate_progress.json"
 SHEET_NAME    = "📚 All Words (Combined)"
 TARGET_TOTAL  = 3000
-BATCH_SIZE    = 100
+BATCH_SIZE    = 50
 MAX_RETRIES   = 3
 
 
@@ -83,9 +83,9 @@ def validate_word(w: dict, cats_set: set):
 
 
 def call_api(client, count: int, next_num: int, cats: list, dedup_sample: set) -> list:
-    sample = list(dedup_sample)[:60]
+    existing = sorted(dedup_sample)
     prompt = (
-        f"Generate exactly {count} Vietnamese vocabulary words at B2 level (upper-intermediate).\n\n"
+        f"Generate exactly {count} NEW Vietnamese vocabulary words at B2 level (upper-intermediate).\n\n"
         "Return ONLY a JSON array. Each element must have these exact keys:\n"
         f'- "num": integer, starting from {next_num}, sequential\n'
         '- "part": one of: noun, verb, adjective, adverb, phrase, conjunction, preposition\n'
@@ -96,20 +96,23 @@ def call_api(client, count: int, next_num: int, cats: list, dedup_sample: set) -
         f'- "cat": one of these categories: {", ".join(cats)}\n'
         '- "notes": brief usage note, grammatical note, or mnemonic (empty string if none)\n\n'
         "Requirements:\n"
-        "- B2 level vocabulary: abstract concepts (tự do, trách nhiệm), formal/academic verbs,\n"
-        "  professional vocabulary (medical, legal, business, technology), complex emotions,\n"
-        "  connectives and discourse markers, idiomatic phrases\n"
+        "- B2 level vocabulary: abstract concepts, formal/academic verbs, professional vocabulary\n"
+        "  (medical, legal, business, technology), complex emotions, connectives and discourse\n"
+        "  markers, idiomatic phrases, literary/written register words\n"
         "- Vietnamese must include all tonal marks — never omit diacritics\n"
-        f"- Do NOT repeat any of these existing words: {', '.join(sample)}\n"
+        "- CRITICAL: Every word you generate MUST be completely absent from the banned list below.\n"
+        "  Check each word carefully before including it. If a word appears on the list, skip it\n"
+        "  and choose a different word. Generating a duplicate wastes a slot.\n"
         "- Spread words across all provided categories roughly evenly\n"
-        "- Return valid JSON only. No markdown code fences, no commentary outside the array."
+        "- Return valid JSON only. No markdown code fences, no commentary outside the array.\n\n"
+        f"BANNED (already exist — do not use any of these):\n{', '.join(existing)}"
     )
-    response = client.messages.create(
-        model="claude-opus-4-6",
-        max_tokens=8192,
+    response = client.chat.completions.create(
+        model="anthropic/claude-opus-4-6",
+        max_tokens=16000,
         messages=[{"role": "user", "content": prompt}],
     )
-    text = response.content[0].text.strip()
+    text = response.choices[0].message.content.strip()
     text = re.sub(r'^```(?:json)?\s*', '', text)
     text = re.sub(r'\s*```$', '', text)
     return json.loads(text)
@@ -128,7 +131,7 @@ def generate_batch(client, target_count: int, next_num: int,
 
     while remaining > 0 and parse_retries <= MAX_RETRIES:
         try:
-            words = call_api(client, remaining, next_num + len(accepted), cats, dedup)
+            words = call_api(client, remaining, next_num + len(accepted), cats, dedup | {normalise(w["viet"]) for w in accepted})
         except (json.JSONDecodeError, ValueError) as e:
             # Only catch parse/decode errors here; let API errors bubble up
             parse_retries += 1
@@ -168,7 +171,7 @@ def generate_batch(client, target_count: int, next_num: int,
     return accepted, total_dups, total_parse_fails
 
 
-def _get_retry_after(e: anthropic.RateLimitError, default: int = 10) -> int:
+def _get_retry_after(e: openai.RateLimitError, default: int = 10) -> int:
     """Extract Retry-After seconds from a RateLimitError response header."""
     try:
         return int(e.response.headers.get("retry-after", default))
@@ -177,11 +180,14 @@ def _get_retry_after(e: anthropic.RateLimitError, default: int = 10) -> int:
 
 
 def main():
-    api_key = os.environ.get("ANTHROPIC_API_KEY")
+    api_key = os.environ.get("OPENROUTER_API_KEY")
     if not api_key:
-        raise SystemExit("Error: ANTHROPIC_API_KEY environment variable not set.")
+        raise SystemExit("Error: OPENROUTER_API_KEY environment variable not set.")
 
-    client = anthropic.Anthropic(api_key=api_key)
+    client = openai.OpenAI(
+        api_key=api_key,
+        base_url="https://openrouter.ai/api/v1",
+    )
 
     print("Loading existing vocab…")
     existing_rows, dedup, cats = load_existing()
@@ -205,7 +211,7 @@ def main():
             try:
                 batch = generate_batch(client, batch_size, next_num, cats, cats_set, dedup)
                 break
-            except anthropic.RateLimitError as e:
+            except openai.RateLimitError as e:
                 wait = _get_retry_after(e)
                 if attempt >= MAX_RETRIES:
                     save_progress({"accepted": accepted, "next_num": next_num})
