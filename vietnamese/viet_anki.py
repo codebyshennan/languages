@@ -14,7 +14,8 @@ import openpyxl
 BASE = Path(__file__).parent
 SRC  = BASE / "viet_vocab_COMPLETE_1962words.xlsx"
 
-TEMPLATE = BASE.parent / "templates" / "viet.html"
+TEMPLATE      = BASE.parent / "templates" / "viet.html"
+PRON_TEMPLATE = BASE.parent / "templates" / "viet_pronunciation.html"
 
 app = Flask(__name__)
 
@@ -56,6 +57,10 @@ def api_vocab():
 @app.route("/")
 def index():
     return TEMPLATE.read_text()
+
+@app.route("/pronunciation")
+def pronunciation():
+    return PRON_TEMPLATE.read_text()
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=False)
