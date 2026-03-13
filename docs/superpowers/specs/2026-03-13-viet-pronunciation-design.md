@@ -70,8 +70,9 @@ Vietnamese vocabulary words are mostly monosyllabic; phrases can be 2–3 syllab
 ### Exported API
 ```js
 window.VietSyllable = {
-  parse(word)       // → array of syllable objects
-  stripTone(char)   // → base vowel character
+  parse(word),           // → array of syllable objects
+  stripTone(char),       // → base vowel character
+  callPronounce(text, lang)  // → speaks text via Web Speech API; passes text directly, no stripping
 }
 ```
 
