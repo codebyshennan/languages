@@ -58,7 +58,7 @@ def api_vocab():
 def index():
     return TEMPLATE.read_text()
 
-@app.route("/pronunciation")
+@app.route("/viet/pronunciation")
 def pronunciation():
     return PRON_TEMPLATE.read_text()
 
