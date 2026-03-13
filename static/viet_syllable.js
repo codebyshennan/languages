@@ -56,23 +56,25 @@
   }
 
   function parseSyllable(raw) {
-    var syl = raw.trim();
+    var syl = raw.trim().toLowerCase();
     if (!syl) return null;
 
     // Step 1: detect tone (keep diacritics for steps 2-4)
     var toneInfo = detectTone(syl);
 
-    // Step 2: match initial consonant (longest first, against original string)
+    // Step 2: match initial consonant (longest first)
+    // Use tone-stripped string for prefix matching so "gi" matches "gì" (ì stripped → i)
+    var sylStripped = stripToneStr(syl);
     var initial = '';
     for (var i = 0; i < INITIALS.length; i++) {
-      if (syl.slice(0, INITIALS[i].length) === INITIALS[i]) {
+      if (sylStripped.slice(0, INITIALS[i].length) === INITIALS[i]) {
         initial = INITIALS[i];
         break;
       }
     }
 
-    // Edge case: gi stripped leaves nothing (standalone "gì" can't happen due to
-    // tone marks on i, but guard defensively anyway)
+    // Edge case: gi stripped leaves nothing — e.g. "gì" where tone mark is on i
+    // (stripped "gi" matches, but original syl.slice(2) is empty)
     var rest = syl.slice(initial.length);
     if (!rest && initial === 'gi') {
       return { raw: raw, tone: toneInfo.tone, toneNum: toneInfo.toneNum, initial: '', nucleus: stripToneStr(syl), final: '' };

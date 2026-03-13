@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>VietSyllable Tests</title>
+</head>
+<body>
+<pre id="out"></pre>
+<script src="../static/viet_syllable.js"></script>
+<script>
+  var P = window.VietSyllable;
+  var results = [];
+  var passed = 0, failed = 0;
+
+  function assert(label, got, expected) {
+    var ok = got === expected;
+    if (ok) { passed++; } else { failed++; }
+    results.push((ok ? 'PASS' : 'FAIL') + '  ' + label +
+      (ok ? '' : '  (got: ' + JSON.stringify(got) + ', expected: ' + JSON.stringify(expected) + ')'));
+  }
+
+  var t;
+
+  // Basic vowel-only syllable
+  t = P.parse('a')[0];
+  assert('a initial = ""',      t.initial,  '');
+  assert('a nucleus = a',       t.nucleus,  'a');
+  assert('a final = ""',        t.final,    '');
+  assert('a tone = ngang',      t.tone,     'ngang');
+  assert('a toneNum = 1',       t.toneNum,  1);
+
+  // Simple onset + nucleus
+  t = P.parse('ba')[0];
+  assert('ba initial = b',      t.initial,  'b');
+  assert('ba nucleus = a',      t.nucleus,  'a');
+  assert('ba final = ""',       t.final,    '');
+  assert('ba tone = ngang',     t.tone,     'ngang');
+
+  // Onset + nucleus + coda
+  t = P.parse('ban')[0];
+  assert('ban initial = b',     t.initial,  'b');
+  assert('ban nucleus = a',     t.nucleus,  'a');
+  assert('ban final = n',       t.final,    'n');
+
+  // Tone mark detection — sắc
+  t = P.parse('bá')[0];
+  assert('bá tone = sắc',       t.tone,     'sắc');
+  assert('bá toneNum = 5',      t.toneNum,  5);
+  assert('bá nucleus = a',      t.nucleus,  'a');
+
+  // Tone mark detection — huyền
+  t = P.parse('bà')[0];
+  assert('bà tone = huyền',     t.tone,     'huyền');
+  assert('bà toneNum = 2',      t.toneNum,  2);
+
+  // Multi-char initial: "ng"
+  t = P.parse('nga')[0];
+  assert('nga initial = ng',    t.initial,  'ng');
+  assert('nga nucleus = a',     t.nucleus,  'a');
+
+  // Multi-char initial: "ngh"
+  t = P.parse('nghe')[0];
+  assert('nghe initial = ngh',  t.initial,  'ngh');
+  assert('nghe nucleus = e',    t.nucleus,  'e');
+
+  // Multi-char initial: "gh"
+  t = P.parse('ghe')[0];
+  assert('ghe initial = gh',    t.initial,  'gh');
+
+  // Multi-char initial: "kh"
+  t = P.parse('không')[0];
+  assert('không initial = kh',  t.initial,  'kh');
+
+  // "gi" initial — regular case
+  t = P.parse('gia')[0];
+  assert('gia initial = gi',    t.initial,  'gi');
+  assert('gia nucleus = a',     t.nucleus,  'a');
+
+  // "gi" edge case — gì (tone mark on i, stripped "gi" matches, rest is empty)
+  t = P.parse('gì')[0];
+  // With tone-stripped initial matching, "gì" gets initial='gi', nucleus set from edge case
+  assert('gì initial = ""',      t.initial,  '');
+  assert('gì tone = huyền',      t.tone,     'huyền');
+  assert('gì toneNum = 2',       t.toneNum,  2);
+  // "Xin" capitalised — should normalise to same as "xin"
+  t = P.parse('Xin')[0];
+  assert('Xin initial = x',      t.initial,  'x');
+  assert('Xin nucleus = i',      t.nucleus,  'i');
+  assert('Xin final = n',        t.final,    'n');
+
+  // Multi-syllable parse
+  var arr = P.parse('xin chào');
+  assert('xin chào length = 2',  arr.length, 2);
+  assert('xin initial = x',      arr[0].initial, 'x');
+  assert('chào initial = ch',    arr[1].initial, 'ch');
+  assert('chào tone = huyền',    arr[1].tone,    'huyền');
+
+  // raw preserves original casing
+  t = P.parse('Không')[0];
+  assert('Không raw preserved',  t.raw,  'Không');
+
+  // Display output
+  var out = document.getElementById('out');
+  out.textContent = results.join('\n') + '\n\n' +
+    passed + ' passed, ' + failed + ' failed.';
+  if (failed > 0) out.style.color = 'red';
+</script>
+</body>
+</html>
