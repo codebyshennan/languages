@@ -88,6 +88,28 @@
   assert('Xin nucleus = i',      t.nucleus,  'i');
   assert('Xin final = n',        t.final,    'n');
 
+  // Tone mark detection — hỏi
+  t = P.parse('bả')[0];
+  assert('bả tone = hỏi',       t.tone,     'hỏi');
+  assert('bả toneNum = 3',      t.toneNum,  3);
+  assert('bả nucleus = a',      t.nucleus,  'a');
+
+  // Tone mark detection — ngã
+  t = P.parse('bã')[0];
+  assert('bã tone = ngã',       t.tone,     'ngã');
+  assert('bã toneNum = 4',      t.toneNum,  4);
+
+  // Tone mark detection — nặng
+  t = P.parse('bạ')[0];
+  assert('bạ tone = nặng',      t.tone,     'nặng');
+  assert('bạ toneNum = 6',      t.toneNum,  6);
+
+  // stripTone helper
+  assert('stripTone á = a',     P.stripTone('á'), 'a');
+  assert('stripTone ắ = ă',     P.stripTone('ắ'), 'ă');
+  assert('stripTone ậ = â',     P.stripTone('ậ'), 'â');
+  assert('stripTone z passthrough', P.stripTone('z'), 'z');
+
   // Multi-syllable parse
   var arr = P.parse('xin chào');
   assert('xin chào length = 2',  arr.length, 2);
