@@ -31,6 +31,7 @@
   <h1>&#x1F1FB;&#x1F1F3; VIET ANKI</h1>
   <button class="mode-btn active" id="btn-vi-en" onclick="setMode('vi_en')">&#x1F1FB;&#x1F1F3; VI &#8594; EN</button>
   <button class="mode-btn"        id="btn-en-vi" onclick="setMode('en_vi')">&#x1F1EC;&#x1F1E7; EN &#8594; VI</button>
+  <button class="mode-btn"        id="btn-pron"  onclick="setMode('pron')">&#128265; PRON</button>
   <label style="color:rgba(255,255,255,0.6);font-size:13px;">Category:</label>
   <select id="cat-select"></select>
   <label style="color:rgba(255,255,255,0.6);font-size:13px;">Part:</label>
@@ -85,6 +86,8 @@
         </div>
         <button class="pronounce-btn" id="btn-pronounce"       onclick="pronounce()">&#128266; Vietnamese</button>
         <button class="pronounce-btn" id="btn-pronounce-canto" onclick="pronounceCanto()" style="display:none;margin-left:8px;">&#128266; Cantonese</button>
+        <button class="pronounce-btn" id="btn-breakdown" onclick="toggleBreakdown(window._vietCurCard && window._vietCurCard.viet)" style="display:none;margin-left:8px;">&#128265; Break Down</button>
+        <div id="breakdown-panel" style="display:none"></div>
       </div>
     </div>
     <div id="action-area">
@@ -143,6 +146,57 @@ function pronounceCanto() {
   }
 }
 
+var breakdownOpen = false;
+
+function renderBreakdown(word) {
+  var syllables = window.VietSyllable ? window.VietSyllable.parse(word) : [];
+  var toneColors = {
+    'ngang': '#777',
+    'huy\u1ec1n': '#1a6fbf',
+    'h\u1ecfi': '#2a9d4e',
+    'ng\u00e3': '#8b4fbf',
+    's\u1eafc': '#cc2233',
+    'n\u1eb7ng': '#7a3000'
+  };
+  var html = '<table style="border-collapse:collapse;width:100%;margin-top:8px">';
+  html += '<tr><th>Syllable</th><th>Initial</th><th>Vowel</th><th>Final</th><th>Tone</th><th></th></tr>';
+  for (var i = 0; i < syllables.length; i++) {
+    var s = syllables[i];
+    var color = toneColors[s.tone] || '#333';
+    html += '<tr>';
+    html += '<td>' + s.raw + '</td>';
+    html += '<td>' + (s.initial || '\u2014') + '</td>';
+    html += '<td>' + (s.nucleus || '\u2014') + '</td>';
+    html += '<td>' + (s.final || '\u2014') + '</td>';
+    html += '<td style="color:' + color + ';font-weight:bold">' + s.tone + '</td>';
+    html += '<td><button onclick="window.VietSyllable && window.VietSyllable.callPronounce(\'' + s.raw.replace(/\\/g, '\\\\').replace(/'/g, "\\'") + '\', \'vi-VN\')">&#128265;</button></td>';
+    html += '</tr>';
+  }
+  html += '</table>';
+  html += '<div style="margin-top:6px;font-size:0.85em"><a href="/pronunciation" target="_blank">&#128214; Full Guide</a></div>';
+  return html;
+}
+
+function showBreakdown(word) {
+  if (!word) return;
+  var panel = document.getElementById('breakdown-panel');
+  if (!panel) return;
+  panel.innerHTML = renderBreakdown(word);
+  panel.style.display = '';
+  breakdownOpen = true;
+}
+
+function toggleBreakdown(word) {
+  var panel = document.getElementById('breakdown-panel');
+  if (!panel) return;
+  if (breakdownOpen) {
+    panel.style.display = 'none';
+    breakdownOpen = false;
+  } else {
+    showBreakdown(word);
+  }
+}
+
 window.LANG_CONFIG = {
   storageKey: "viet_progress",
   vocabUrl:   "/api/vocab/viet",
@@ -164,16 +218,25 @@ window.LANG_CONFIG = {
   updateModeUI: function(m) {
     document.getElementById("btn-vi-en").classList.toggle("active", m === "vi_en");
     document.getElementById("btn-en-vi").classList.toggle("active", m === "en_vi");
+    document.getElementById("btn-pron").classList.toggle("active", m === "pron");
   },
 
   getQuestion: function(card, mode) {
     var partEl = document.getElementById("card-part");
     if (partEl) partEl.textContent = " \u00b7 " + card.part;
+    // reset breakdown panel on each card load
+    breakdownOpen = false;
+    var panel = document.getElementById("breakdown-panel");
+    if (panel) { panel.style.display = "none"; panel.innerHTML = ""; }
+    var btn = document.getElementById("btn-breakdown");
+    if (btn) btn.style.display = (mode === "vi_en") ? "" : "none";
+    if (mode === "pron") return { text: card.viet, dir: "Pronunciation" };
     if (mode === "vi_en") return { text: card.viet,    dir: "Vietnamese \u2192 English" };
     return               { text: card.english, dir: "English \u2192 Vietnamese" };
   },
 
   getQuestionTTS: function(card, mode) {
+    if (mode === "pron") return null;
     if (mode === "vi_en") return { text: card.viet, lang: "vi-VN" };
     return null;
   },
@@ -184,6 +247,19 @@ window.LANG_CONFIG = {
 
   renderAnswer: function(card, mode) {
     window._vietCurCard = card;
+
+    if (mode === "pron") {
+      document.getElementById("ans-english").textContent = "";
+      var hanziRowP = document.getElementById("hanzi-row");
+      if (hanziRowP) hanziRowP.style.display = "none";
+      var cantoBtnP = document.getElementById("btn-pronounce-canto");
+      if (cantoBtnP) cantoBtnP.style.display = "none";
+      var notesElP = document.getElementById("ans-notes");
+      if (notesElP) notesElP.style.display = "none";
+      showBreakdown(card.viet);
+      return null;
+    }
+
     document.getElementById("ans-english").textContent = mode === "vi_en" ? card.english : card.viet;
 
     var hanziRow   = document.getElementById("hanzi-row");
@@ -203,6 +279,10 @@ window.LANG_CONFIG = {
       notesEl.textContent = card.notes; notesEl.style.display = "block";
     } else { notesEl.style.display = "none"; }
 
+    // show breakdown button after answer reveal in en_vi mode
+    var bdBtn = document.getElementById("btn-breakdown");
+    if (bdBtn && mode === "en_vi") bdBtn.style.display = "";
+
     if (mode === "en_vi") return { text: card.viet, lang: "vi-VN" };
     return null;
   },
@@ -216,9 +296,15 @@ window.LANG_CONFIG = {
 
   handleExtraKeys: function(e, curCard) {
     if ((e.key === "c" || e.key === "C") && curCard) pronounceCanto();
+    if ((e.key === "b" || e.key === "B") && curCard) {
+      var btn = document.getElementById("btn-breakdown");
+      if (!btn || btn.style.display === "none") return;
+      toggleBreakdown(curCard.viet);
+    }
   },
 };
 </script>
+<script src="/static/viet_syllable.js"></script>
 <script src="/static/shared.js"></script>
 </body>
 </html>
