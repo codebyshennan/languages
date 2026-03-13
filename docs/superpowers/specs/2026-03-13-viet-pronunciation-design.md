@@ -20,12 +20,12 @@ All changes are frontend-only. No backend schema changes required beyond one new
 
 ### New files
 - `templates/viet_pronunciation.html` — standalone reference page
-- `static/viet_syllable.js` — shared Vietnamese syllable parser (no dependencies)
+- `static/viet_syllable.js` — shared Vietnamese syllable parser (no dependencies); also exports a `callPronounce(text, lang)` helper (guards `window.speechSynthesis`) so the reference page can use TTS without loading `shared.js`
 
 ### Modified files
-- `vietnamese/viet_anki.py` — add `/pronunciation` route
-- `templates/viet.html` — add Pronunciation mode button, Break Down button, breakdown panel, link to reference page
-- `static/shared.js` — no changes (pronunciation mode is handled entirely in `viet.html` via `LANG_CONFIG`)
+- `vietnamese/viet_anki.py` — add `/pronunciation` route using the same `Path.read_text()` pattern as the existing `/` route (not `render_template`); define `PRON_TEMPLATE = BASE.parent / "templates" / "viet_pronunciation.html"` and return `PRON_TEMPLATE.read_text()`
+- `templates/viet.html` — add Pronunciation mode button, extend `updateModeUI` to handle `pron` mode, add Break Down button, breakdown panel, link to reference page, extend `handleExtraKeys` to wire `B` key
+- `static/shared.js` — no changes
 
 ### Data flow
 ```
@@ -43,16 +43,17 @@ vocab card (viet string)
 Vietnamese vocabulary words are mostly monosyllabic; phrases can be 2–3 syllables separated by spaces.
 
 ### Algorithm (per syllable)
-1. **Tone detection** — scan for tone diacritics on vowels:
+1. **Tone detection** — scan the raw syllable for tone diacritics; record tone name and number, but do **not** strip yet (stripping happens last, for display only):
    - No mark → ngang (flat, mid level)
    - `á/ắ/ấ/ế/í/ó/ố/ớ/ú/ứ/ý` → sắc (rising)
    - `à/ằ/ầ/ề/ì/ò/ồ/ờ/ù/ừ/ỳ` → huyền (falling)
    - `ả/ẳ/ẩ/ể/ỉ/ỏ/ổ/ở/ủ/ử/ỷ` → hỏi (dipping)
    - `ã/ẵ/ẫ/ễ/ĩ/õ/ỗ/ỡ/ũ/ữ/ỹ` → ngã (creaky rising)
    - `ạ/ặ/ậ/ệ/ị/ọ/ộ/ợ/ụ/ự/ỵ` → nặng (heavy falling)
-2. **Initial consonant** — match longest prefix from ordered list: `ngh, ng, nh, ch, gh, gi, kh, ph, th, tr, qu, b, c, d, đ, g, h, k, l, m, n, p, r, s, t, v, x` (empty string if none)
+2. **Initial consonant** — match longest prefix from ordered list against the **original diacritic-bearing** string: `ngh, ng, nh, ch, gh, gi, kh, ph, th, tr, qu, b, c, d, đ, g, h, k, l, m, n, p, r, s, t, v, x` (empty string if none). Edge case: if `gi` is stripped as the initial and nothing remains (e.g. the standalone word "gì"), treat the entire token as the nucleus with empty initial and final.
 3. **Final consonant** — match suffix from: `ch, ng, nh, c, m, n, p, t` (empty string if none)
-4. **Vowel nucleus** — everything between initial and final
+4. **Vowel nucleus** — everything between initial and final (still bears the tone diacritic at this point)
+5. **Strip tone from nucleus** — replace tone-marked vowel characters with their base equivalents for display in the breakdown table. The `raw` field retains the original string.
 
 ### Output shape
 ```js
@@ -80,7 +81,7 @@ window.VietSyllable = {
 
 Route: `GET /pronunciation` → serves `templates/viet_pronunciation.html`
 
-Shares the same CSS variables and `shared.css` as `viet.html`. Navigation link back to `/`.
+Loads `/static/shared.css` (same path as `viet.html`). Does **not** load `shared.js` (which would crash without `window.LANG_CONFIG`). Instead loads only `viet_syllable.js` which exports its own `callPronounce` helper with a `window.speechSynthesis` guard. Navigation link back to `/`.
 
 ### Sections
 
@@ -101,7 +102,9 @@ Each row has a 🔉 button that speaks the example word with `vi-VN`.
 #### 2. Simple Vowels
 Grid: Vowel | Name | Approx. English | Example | 🔉
 
-Covers: a, ă, â, e, ê, i/y, o, ô, ơ, u, ư
+Covers: a, ă, â, e, ê, i, y, o, ô, ơ, u, ư
+
+`i` and `y` are listed as separate rows (each with their own TTS button) to avoid the slash notation which would be corrupted by `shared.js`'s `callPronounce` stripping. Do not use `i/y` as a combined entry.
 
 #### 3. Vowel Clusters
 Grid of common clusters with example words and 🔉:
@@ -122,8 +125,11 @@ Key point: `-c, -ch, -p, -t` are unreleased stops (no puff of air). `-ng, -nh` n
 ## Card Integration
 
 ### Break Down button
-- Rendered in `viet.html` card body, always visible once a card is loaded (before and after answer reveal)
-- Label: `🔉 Break Down` — keyboard shortcut `B`
+- Rendered in `viet.html` card body
+- **VI→EN mode**: visible before and after answer reveal (the Vietnamese word is already the question, so no spoiler risk)
+- **EN→VI mode**: visible only after answer reveal (before reveal, the breakdown would expose the Vietnamese answer)
+- **PRON mode**: always visible, auto-expanded (see Pronunciation Mode below)
+- Label: `🔉 Break Down` — keyboard shortcut `B` (wired via `cfg.handleExtraKeys` in `viet.html`, not in `shared.js`)
 - Expands/collapses a `#breakdown-panel` div below the answer area
 - Panel renders one row per syllable:
 
@@ -140,9 +146,10 @@ Key point: `-c, -ch, -p, -t` are unreleased stops (no puff of air). `-ng, -nh` n
 
 ### Pronunciation Mode
 - New mode button: `🔉 PRON` added to the topbar alongside VI→EN / EN→VI
-- `LANG_CONFIG.getQuestion` returns the Vietnamese word as the question in all PRON mode cards
-- `LANG_CONFIG.getQuestionTTS` returns `null` (no auto-play on question; user drives it)
-- `LANG_CONFIG.renderAnswer` returns the English translation as the answer text, and auto-expands the breakdown panel
+- `updateModeUI` must be extended to toggle the `pron` button active state (alongside existing `vi_en`/`en_vi` handling)
+- `LANG_CONFIG.getQuestion` returns the Vietnamese word as the question in PRON mode
+- `LANG_CONFIG.getQuestionTTS` returns `null` in PRON mode (no auto-play; user drives pronunciation)
+- `LANG_CONFIG.renderAnswer` in PRON mode: auto-expands the breakdown panel and returns `null` (no auto-TTS on answer reveal; user taps syllable rows to hear them)
 - Breakdown panel is auto-shown (not collapsed) when in PRON mode
 - Each syllable row is styled as a large tappable button (mobile-friendly) that speaks that syllable
 - Rating buttons still work normally (1–4) to maintain SRS progress
@@ -162,12 +169,12 @@ Consistent across reference page and breakdown panel:
 
 | Tone | Colour |
 |------|--------|
-| ngang | #555 (neutral grey) |
+| ngang | #777 (neutral grey) |
 | huyền | #1a6fbf (blue, falling) |
 | hỏi | #2a9d4e (green, dip-rise) |
 | ngã | #8b4fbf (purple, creaky) |
 | sắc | #cc2233 (red, rising) |
-| nặng | #333 (dark, heavy) |
+| nặng | #7a3000 (dark brown, heavy) |
 
 ---
 
