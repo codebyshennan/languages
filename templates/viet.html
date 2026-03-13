@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Viet Anki — Spaced Repetition</title>
 <link rel="stylesheet" href="/static/shared.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 <style>
   :root {
     --primary:         #8B0000;
@@ -28,16 +29,17 @@
 <body>
 
 <div id="topbar">
-  <h1>&#x1F1FB;&#x1F1F3; VIET ANKI</h1>
-  <button class="mode-btn active" id="btn-vi-en" onclick="setMode('vi_en')">&#x1F1FB;&#x1F1F3; VI &#8594; EN</button>
-  <button class="mode-btn"        id="btn-en-vi" onclick="setMode('en_vi')">&#x1F1EC;&#x1F1E7; EN &#8594; VI</button>
-  <button class="mode-btn"        id="btn-pron"  onclick="setMode('pron')">&#128265; PRON</button>
+  <h1>VIET ANKI</h1>
+  <button class="mode-btn active" id="btn-vi-en" onclick="setMode('vi_en')">VI &#8594; EN</button>
+  <button class="mode-btn"        id="btn-en-vi" onclick="setMode('en_vi')">EN &#8594; VI</button>
+  <button class="mode-btn"        id="btn-pron"  onclick="setMode('pron')"><i class="fa-solid fa-volume-low"></i> PRON</button>
   <label style="color:rgba(255,255,255,0.6);font-size:13px;">Category:</label>
   <select id="cat-select"></select>
   <label style="color:rgba(255,255,255,0.6);font-size:13px;">Part:</label>
   <select id="part-select"></select>
   <div class="spacer"></div>
-  <button id="stats-btn" onclick="openStats()">&#128202; Stats</button>
+  <a href="/pronunciation" class="mode-btn" style="text-decoration:none" target="_blank"><i class="fa-solid fa-book-open"></i> Guide</a>
+  <button id="stats-btn" onclick="openStats()"><i class="fa-solid fa-chart-bar"></i> Stats</button>
 </div>
 
 <div id="progstrip">
@@ -84,20 +86,20 @@
           </div>
           <div class="ans-notes" id="ans-notes" style="display:none"></div>
         </div>
-        <button class="pronounce-btn" id="btn-pronounce"       onclick="pronounce()">&#128266; Vietnamese</button>
-        <button class="pronounce-btn" id="btn-pronounce-canto" onclick="pronounceCanto()" style="display:none;margin-left:8px;">&#128266; Cantonese</button>
-        <button class="pronounce-btn" id="btn-breakdown" onclick="toggleBreakdown(window._vietCurCard && window._vietCurCard.viet)" style="display:none;margin-left:8px;">&#128265; Break Down</button>
+        <button class="pronounce-btn" id="btn-pronounce"       onclick="pronounce()"><i class="fa-solid fa-volume-high"></i> Vietnamese</button>
+        <button class="pronounce-btn" id="btn-pronounce-canto" onclick="pronounceCanto()" style="display:none;margin-left:8px;"><i class="fa-solid fa-volume-high"></i> Cantonese</button>
+        <button class="pronounce-btn" id="btn-breakdown" onclick="toggleBreakdown(window._vietCurCard && window._vietCurCard.viet)" style="display:none;margin-left:8px;"><i class="fa-solid fa-waveform-lines"></i> Break Down</button>
         <div id="breakdown-panel" style="display:none"></div>
       </div>
     </div>
     <div id="action-area">
-      <button id="btn-show" onclick="showAnswer()">&#128065; Show Answer</button>
+      <button id="btn-show" onclick="showAnswer()"><i class="fa-solid fa-eye"></i> Show Answer</button>
       <div id="rating-area">
         <div class="rating-row">
-          <button class="rating-btn btn-again" onclick="rate(1)">&#128560; Again<br><small>forgot</small></button>
-          <button class="rating-btn btn-hard"  onclick="rate(2)">&#128533; Hard<br><small>struggled</small></button>
-          <button class="rating-btn btn-good"  onclick="rate(3)">&#128578; Good<br><small>knew it</small></button>
-          <button class="rating-btn btn-easy"  onclick="rate(4)">&#128516; Easy<br><small>instant!</small></button>
+          <button class="rating-btn btn-again" onclick="rate(1)"><i class="fa-solid fa-rotate-left"></i> Again<br><small>forgot</small></button>
+          <button class="rating-btn btn-hard"  onclick="rate(2)"><i class="fa-solid fa-circle-minus"></i> Hard<br><small>struggled</small></button>
+          <button class="rating-btn btn-good"  onclick="rate(3)"><i class="fa-solid fa-check"></i> Good<br><small>knew it</small></button>
+          <button class="rating-btn btn-easy"  onclick="rate(4)"><i class="fa-solid fa-bolt"></i> Easy<br><small>instant!</small></button>
         </div>
         <div class="hint-row">
           <span class="kbd">1</span> Again &nbsp;
@@ -110,7 +112,7 @@
   </div>
 
   <div id="session-end">
-    <h2>&#127881; Session Done!</h2>
+    <h2><i class="fa-solid fa-trophy"></i> Session Done!</h2>
     <div class="end-stats">
       <div class="end-stat"><div class="n" id="end-cor" style="color:var(--green)">&#8212;</div><div class="l">Correct</div></div>
       <div class="end-stat"><div class="n" id="end-wrg" style="color:var(--red)">&#8212;</div><div class="l">Wrong</div></div>
@@ -120,15 +122,15 @@
   </div>
 
   <div id="bottom-bar">
-    <button id="btn-start" onclick="startSession()">&#9654; Start Session</button>
-    <button id="btn-quit"  onclick="goHome()">&#127968; Home</button>
+    <button id="btn-start" onclick="startSession()"><i class="fa-solid fa-play"></i> Start Session</button>
+    <button id="btn-quit"  onclick="goHome()"><i class="fa-solid fa-house"></i> Home</button>
   </div>
 </div>
 
 <div id="modal-overlay" onclick="if(event.target===this)closeStats()">
   <div class="modal">
     <div class="modal-header">
-      <h3>&#128202; Your Progress</h3>
+      <h3><i class="fa-solid fa-chart-bar"></i> Your Progress</h3>
       <button class="modal-close" onclick="closeStats()">&#10005;</button>
     </div>
     <div class="modal-body" id="modal-body">Loading&#8230;</div>
@@ -169,11 +171,11 @@ function renderBreakdown(word) {
     html += '<td>' + (s.nucleus || '\u2014') + '</td>';
     html += '<td>' + (s.final || '\u2014') + '</td>';
     html += '<td style="color:' + color + ';font-weight:bold">' + s.tone + '</td>';
-    html += '<td><button onclick="window.VietSyllable && window.VietSyllable.callPronounce(\'' + s.raw.replace(/\\/g, '\\\\').replace(/'/g, "\\'") + '\', \'vi-VN\')">&#128265;</button></td>';
+    html += '<td><button onclick="window.VietSyllable && window.VietSyllable.callPronounce(\'' + s.raw.replace(/\\/g, '\\\\').replace(/'/g, "\\'") + '\', \'vi-VN\')"><i class="fa-solid fa-volume-low"></i></button></td>';
     html += '</tr>';
   }
   html += '</table>';
-  html += '<div style="margin-top:6px;font-size:0.85em"><a href="/pronunciation" target="_blank">&#128214; Full Guide</a></div>';
+  html += '<div style="margin-top:6px;font-size:0.85em"><a href="/pronunciation" target="_blank"><i class="fa-solid fa-book-open"></i> Full Guide</a></div>';
   return html;
 }
 
