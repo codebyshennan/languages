@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Bahasa Anki — Spaced Repetition</title>
 <link rel="stylesheet" href="/static/shared.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 <style>
   :root {
     --primary:         #1A3C5E;
@@ -25,13 +26,15 @@
 <body>
 
 <div id="topbar">
-  <h1>&#x1F0CF; BAHASA ANKI</h1>
-  <button class="mode-btn active" id="btn-id-en" onclick="setMode('id_en')">&#x1F1EE;&#x1F1E9; ID &#8594; EN</button>
-  <button class="mode-btn"        id="btn-en-id" onclick="setMode('en_id')">&#x1F1EC;&#x1F1E7; EN &#8594; ID</button>
+  <h1><i class="fa-solid fa-language"></i> BAHASA ANKI</h1>
+  <button class="mode-btn active" id="btn-id-en" onclick="setMode('id_en')">ID &#8594; EN</button>
+  <button class="mode-btn"        id="btn-en-id" onclick="setMode('en_id')">EN &#8594; ID</button>
   <label style="color:rgba(255,255,255,0.6);font-size:13px;">Category:</label>
   <select id="cat-select"></select>
+  <a href="/bahasa/pronunciation" class="mode-btn" style="text-decoration:none"><i class="fa-solid fa-book-open"></i> Guide</a>
   <div class="spacer"></div>
-  <button id="stats-btn" onclick="openStats()">&#128202; Stats</button>
+  <a href="/" class="mode-btn" style="text-decoration:none"><i class="fa-solid fa-house"></i></a>
+  <button id="stats-btn" onclick="openStats()"><i class="fa-solid fa-chart-bar"></i> Stats</button>
 </div>
 
 <div id="progstrip">
@@ -42,7 +45,7 @@
 
 <div id="main">
   <div id="welcome">
-    <h2>&#x1F1EE;&#x1F1E9; Bahasa Indonesia / Melayu</h2>
+    <h2>Bahasa Indonesia / Melayu</h2>
     <p>Spaced-repetition flashcards &#8212; 2&thinsp;000 words, SM-2 algorithm</p>
     <div class="stat-grid">
       <div class="stat-box due"><div class="num" id="ov-due">&#8230;</div><div class="lbl">Due Today</div></div>
@@ -74,17 +77,17 @@
           <div class="ans-example"    id="ans-contoh"  style="display:none"></div>
           <div class="ans-eng-ex"     id="ans-eng-ex"  style="display:none"></div>
         </div>
-        <button class="pronounce-btn" id="btn-pronounce" onclick="pronounce()">&#128266; Pronounce</button>
+        <button class="pronounce-btn" id="btn-pronounce" onclick="pronounce()"><i class="fa-solid fa-volume-high"></i> Pronounce</button>
       </div>
     </div>
     <div id="action-area">
-      <button id="btn-show" onclick="showAnswer()">&#128065; Show Answer</button>
+      <button id="btn-show" onclick="showAnswer()"><i class="fa-solid fa-eye"></i> Show Answer</button>
       <div id="rating-area">
         <div class="rating-row">
-          <button class="rating-btn btn-again" onclick="rate(1)">&#128560; Again<br><small>forgot</small></button>
-          <button class="rating-btn btn-hard"  onclick="rate(2)">&#128533; Hard<br><small>struggled</small></button>
-          <button class="rating-btn btn-good"  onclick="rate(3)">&#128578; Good<br><small>knew it</small></button>
-          <button class="rating-btn btn-easy"  onclick="rate(4)">&#128516; Easy<br><small>instant!</small></button>
+          <button class="rating-btn btn-again" onclick="rate(1)"><i class="fa-solid fa-rotate-left"></i> Again<br><small>forgot</small></button>
+          <button class="rating-btn btn-hard"  onclick="rate(2)"><i class="fa-solid fa-circle-minus"></i> Hard<br><small>struggled</small></button>
+          <button class="rating-btn btn-good"  onclick="rate(3)"><i class="fa-solid fa-check"></i> Good<br><small>knew it</small></button>
+          <button class="rating-btn btn-easy"  onclick="rate(4)"><i class="fa-solid fa-bolt"></i> Easy<br><small>instant!</small></button>
         </div>
         <div class="hint-row">
           <span class="kbd">1</span> Again &nbsp;
@@ -97,7 +100,7 @@
   </div>
 
   <div id="session-end">
-    <h2>&#127881; Session Done!</h2>
+    <h2><i class="fa-solid fa-trophy"></i> Session Done!</h2>
     <div class="end-stats">
       <div class="end-stat"><div class="n" id="end-cor" style="color:var(--green)">&#8212;</div><div class="l">Correct</div></div>
       <div class="end-stat"><div class="n" id="end-wrg" style="color:var(--red)">&#8212;</div><div class="l">Wrong</div></div>
@@ -107,16 +110,16 @@
   </div>
 
   <div id="bottom-bar">
-    <button id="btn-start" onclick="startSession()">&#9654; Start Session</button>
-    <button id="btn-quit"  onclick="goHome()">&#127968; Home</button>
+    <button id="btn-start" onclick="startSession()"><i class="fa-solid fa-play"></i> Start Session</button>
+    <button id="btn-quit"  onclick="goHome()"><i class="fa-solid fa-house"></i> Home</button>
   </div>
 </div>
 
 <div id="modal-overlay" onclick="if(event.target===this)closeStats()">
   <div class="modal">
     <div class="modal-header">
-      <h3>&#128202; Your Progress</h3>
-      <button class="modal-close" onclick="closeStats()">&#10005;</button>
+      <h3><i class="fa-solid fa-chart-bar"></i> Your Progress</h3>
+      <button class="modal-close" onclick="closeStats()"><i class="fa-solid fa-xmark"></i></button>
     </div>
     <div class="modal-body" id="modal-body">Loading&#8230;</div>
   </div>

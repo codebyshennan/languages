@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bahasa Indonesia Pronunciation Guide</title>
+  <link rel="stylesheet" href="/static/shared.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <style>
+    :root {
+      --primary:    #1A3C5E;
+      --primary-dk: #162E48;
+      --accent2:    #1ABC9C;
+      --lgrey:      #F0F8FF;
+      --dgrey:      #6B7280;
+      --red:        #C0392B;
+      --green:      #1ABC9C;
+      --amber:      #d97706;
+    }
+
+    /* Page layout */
+    .pron-page {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 0 16px 48px;
+    }
+
+    /* Back link bar */
+    .back-bar {
+      background: var(--primary-dk);
+      padding: 8px 20px;
+    }
+    .back-bar a {
+      color: rgba(255,255,255,0.75);
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 600;
+      transition: color 0.2s;
+    }
+    .back-bar a:hover { color: white; }
+
+    /* Page title */
+    .page-title {
+      color: var(--primary);
+      font-size: 28px;
+      font-weight: 700;
+      margin: 28px 0 6px;
+    }
+    .page-subtitle {
+      color: var(--dgrey);
+      font-size: 14px;
+      margin-bottom: 28px;
+      line-height: 1.5;
+    }
+
+    /* Sections */
+    .section {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.07);
+      padding: 24px;
+      margin-bottom: 28px;
+    }
+    .section h2 {
+      color: var(--primary);
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 6px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid var(--lgrey);
+    }
+    .section-desc {
+      color: var(--dgrey);
+      font-size: 13px;
+      margin-bottom: 14px;
+      line-height: 1.5;
+    }
+
+    /* Reference tables */
+    .ref-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+    .ref-table th {
+      background: var(--primary);
+      color: white;
+      padding: 8px 12px;
+      text-align: left;
+      font-weight: 600;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+    .ref-table td {
+      padding: 9px 12px;
+      border-bottom: 1px solid #EEF2F6;
+      vertical-align: middle;
+    }
+    .ref-table tr:nth-child(even) td { background: #F8FAFC; }
+    .ref-table tr:hover td { background: #EAF6F6; }
+
+    /* Cell styles */
+    .char-cell {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--primary);
+    }
+    .spelling-cell {
+      font-family: monospace;
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--primary);
+    }
+    .sound-cell {
+      font-family: monospace;
+      font-size: 13px;
+      color: #555;
+    }
+    .approx-cell {
+      font-style: italic;
+      color: #444;
+      font-size: 13px;
+    }
+    .notes-cell {
+      color: var(--dgrey);
+      font-size: 12px;
+    }
+    .example-word {
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--primary);
+    }
+
+    /* TTS button */
+    .tts-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 18px;
+      padding: 4px 6px;
+      border-radius: 6px;
+      transition: background 0.15s;
+      line-height: 1;
+    }
+    .tts-btn:hover  { background: #D5EEF5; }
+    .tts-btn:active { background: #B0D9E8; }
+
+    /* Note boxes */
+    .key-note {
+      background: #FFF8E7;
+      border-left: 4px solid var(--amber);
+      border-radius: 4px;
+      padding: 10px 14px;
+      font-size: 13px;
+      color: #5a4000;
+      margin-bottom: 14px;
+      line-height: 1.5;
+    }
+    .key-note-teal {
+      background: #E8FAF6;
+      border-left: 4px solid var(--green);
+      border-radius: 4px;
+      padding: 10px 14px;
+      font-size: 13px;
+      color: #0a3d30;
+      margin-bottom: 14px;
+      line-height: 1.5;
+    }
+    .key-note-blue {
+      background: #EBF4FC;
+      border-left: 4px solid var(--primary);
+      border-radius: 4px;
+      padding: 10px 14px;
+      font-size: 13px;
+      color: #0d1f30;
+      margin-bottom: 14px;
+      line-height: 1.5;
+    }
+
+    /* Badges */
+    .badge-formal {
+      display: inline-block;
+      background: #EBF4FC;
+      color: var(--primary);
+      border-radius: 4px;
+      font-size: 11px;
+      padding: 1px 6px;
+      font-weight: 600;
+    }
+    .badge-colloquial {
+      display: inline-block;
+      background: #FEF9E7;
+      color: #7d5a00;
+      border-radius: 4px;
+      font-size: 11px;
+      padding: 1px 6px;
+      font-weight: 600;
+    }
+    .badge-arabic {
+      display: inline-block;
+      background: #F4EAF8;
+      color: #6a1d8a;
+      border-radius: 4px;
+      font-size: 11px;
+      padding: 1px 6px;
+      font-weight: 600;
+    }
+
+    /* Affix cards */
+    .affix-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 12px;
+    }
+    .affix-card {
+      background: var(--lgrey);
+      border-radius: 8px;
+      padding: 12px 14px;
+    }
+    .affix-label {
+      font-family: monospace;
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--primary);
+      margin-bottom: 4px;
+    }
+    .affix-rule {
+      font-size: 12px;
+      color: var(--dgrey);
+      margin-bottom: 8px;
+    }
+    .affix-examples {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .affix-pill {
+      background: white;
+      border-radius: 20px;
+      padding: 3px 10px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #333;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    }
+    .affix-pill em {
+      color: var(--primary);
+      font-style: normal;
+      font-weight: 700;
+    }
+
+    /* Responsive */
+    @media (max-width: 600px) {
+      .ref-table th:nth-child(3),
+      .ref-table td:nth-child(3) { display: none; }
+      .affix-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<div id="topbar">
+  <h1>Bahasa Indonesia Pronunciation Guide</h1>
+</div>
+
+<div class="back-bar">
+  <a href="/bahasa">← Back to flashcards</a>
+</div>
+
+<div class="pron-page">
+
+  <h1 class="page-title">Pronunciation Reference</h1>
+  <p class="page-subtitle">
+    A complete overview of Bahasa Indonesia vowels, consonants, stress, and affixation.
+    Click <i class="fa-solid fa-volume-low"></i> on any row to hear the example word via text-to-speech.
+  </p>
+  <div class="key-note-teal">
+    <strong>Good news:</strong> Indonesian is one of the most phonetically consistent languages — spelling and pronunciation align closely.
+    There are no tones, no grammatical gender, and verbs do not conjugate for tense. The main challenges are the two <em>e</em> sounds and the nasal digraphs.
+  </div>
+
+  <!-- ===================== 1. VOWELS ===================== -->
+  <div class="section">
+    <h2>1. Vowels</h2>
+    <p class="section-desc">
+      Indonesian has 6 vowel sounds. The trickiest is <strong>e</strong>, which has two distinct pronunciations —
+      <em>taling</em> (clear "eh") and <em>pepet</em> (schwa "uh") — both written identically without diacritics.
+      Context and dictionary lookup distinguishes them.
+    </p>
+    <table class="ref-table">
+      <thead>
+        <tr>
+          <th>Vowel</th>
+          <th>Approx. English</th>
+          <th>Notes</th>
+          <th>Example</th>
+          <th><i class="fa-solid fa-volume-low"></i></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="char-cell">a</td>
+          <td class="approx-cell">"father"</td>
+          <td class="notes-cell">Open, never "ay" — consistent in all positions</td>
+          <td class="example-word">apa</td>
+          <td><button class="tts-btn" onclick="pronounce('apa')"><i class="fa-solid fa-volume-low"></i></button></td>
+        </tr>
+        <tr>
+          <td class="char-cell">e (taling)</td>
+          <td class="approx-cell">"bed"</td>
+          <td class="notes-cell">Clear mid-front vowel — <em>enak</em> (tasty), <em>sate</em>, <em>beli</em></td>
+          <td class="example-word">enak</td>
+          <td><button class="tts-btn" onclick="pronounce('enak')"><i class="fa-solid fa-volume-low"></i></button></td>
+        </tr>
+        <tr>
+          <td class="char-cell">e (pepet)</td>
+          <td class="approx-cell">"about" (schwa)</td>
+          <td class="notes-cell">Reduced central vowel — common in prefixes (<em>me-, be-, ter-, ke-</em>) and many roots</td>
+          <td class="example-word">benar</td>
+          <td><button class="tts-btn" onclick="pronounce('benar')"><i class="fa-solid fa-volume-low"></i></button></td>
+        </tr>
+        <tr>
+          <td class="char-cell">i</td>
+          <td class="approx-cell">"bee"</td>
+          <td class="notes-cell">High-front, pure — never lax as in English "bit"</td>
+          <td class="example-word">ini</td>
+          <td><button class="tts-btn" onclick="pronounce('ini')"><i class="fa-solid fa-volume-low"></i></button></td>
+        </tr>
+        <tr>
+          <td class="char-cell">o</td>
+          <td class="approx-cell">"boat" (pure)</td>
+          <td class="notes-cell">Mid-back rounded — no "oh-w" glide. Can open toward "aw" word-finally.</td>
+          <td class="example-word">obat</td>
+          <td><button class="tts-btn" onclick="pronounce('obat')"><i class="fa-solid fa-volume-low"></i></button></td>
+        </tr>
+        <tr>
+          <td class="char-cell">u</td>
+          <td class="approx-cell">"boot" (pure)</td>
+          <td class="notes-cell">High-back rounded — consistent; no "oo-w" glide</td>
+          <td class="example-word">untuk</td>
+          <td><button class="tts-btn" onclick="pronounce('untuk')"><i class="fa-solid fa-volume-low"></i></button></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ===================== 2. KEY CONSONANTS & DIGRAPHS ===================== -->
+  <div class="section">
+    <h2>2. Key Consonants &amp; Digraphs</h2>
+    <p class="section-desc">
+      Most consonants match English. These are the exceptions and digraphs that learners must learn explicitly.
+    </p>
+    <table class="ref-table">
+      <thead>
+        <tr>
+          <th>Spelling</th>
+          <th>Sound</th>
+          <th>Notes</th>
+          <th>Example</th>
+          <th><i class="fa-solid fa-volume-low"></i></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="spelling-cell">c</td>
+          <td class="sound-cell">"ch"</td>
+          <td class="notes-cell">Always "ch" as in <em>church</em> — never "k" or "s"</td>
+          <td class="example-word">coba</td>
+          <td><button class="tts-btn" onclick="pronounce('coba')"><i class="fa-solid fa-volume-low"></i></button></td>
+        </tr>
+        <tr>
+          <td class="spelling-cell">g</td>
+          <td class="sound-cell">"g"</td>
+          <td class="notes-cell">Always hard g as in <em>go</em> — never soft as in English <em>gem</em></td>
+          <td class="example-word">guna</td>
+          <td><button class="tts-btn" onclick="pronounce('guna')"><i class="fa-solid fa-volume-low"></i></button></td>
+        </tr>
+        <tr>
+          <td class="spelling-cell">h</td>
+          <td class="sound-cell">"h" / weakened</td>
+          <td class="notes-cell">Clear at start of word and between vowels; often weakened or silent at word end</td>
+          <td class="example-word">hari</td>
+          <td><button class="tts-btn" onclick="pronounce('hari')"><i class="fa-solid fa-volume-low"></i></button></td>
+        </tr>
+        <tr>
+          <td class="spelling-cell">j</td>
+          <td class="sound-cell">"dj"</td>
+          <td class="notes-cell">Like "judge" — a voiced affricate, not a French "j"</td>
+          <td class="example-word">jalan</td>
+          <td><button class="tts-btn" onclick="pronounce('jalan')"><i class="fa-solid fa-volume-low"></i></button></td>
+        </tr>
+        <tr>
+          <td class="spelling-cell">kh</td>
+          <td class="sound-cell">"kh"</td>
+          <td class="notes-cell"><span class="badge-arabic">Arabic loanword</span> Fricative — like Scottish <em>loch</em>. Often simplified to "k" in colloquial speech.</td>
+          <td class="example-word">khusus</td>
+          <td><button class="tts-btn" onclick="pronounce('khusus')"><i class="fa-solid fa-volume-low"></i></button></td>
+        </tr>
+        <tr>
+          <td class="spelling-cell">ng</td>
+          <td class="sound-cell">"ng"</td>
+          <td class="notes-cell">Like "sing" — <em>can begin a syllable or word</em>, unlike English</td>
+          <td class="example-word">dengan</td>
+          <td><button class="tts-btn" onclick="pronounce('dengan')"><i class="fa-solid fa-volume-low"></i></button></td>
+        </tr>
+        <tr>
+          <td class="spelling-cell">ngg</td>
+          <td class="sound-cell">"ng" + hard g</td>
+          <td class="notes-cell">The nasal ng followed by a hard g — distinct from single ng</td>
+          <td class="example-word">tunggu</td>
+          <td><button class="tts-btn" onclick="pronounce('tunggu')"><i class="fa-solid fa-volume-low"></i></button></td>
+        </tr>
+        <tr>
+          <td class="spelling-cell">ny</td>
+          <td class="sound-cell">"ny"</td>
+          <td class="notes-cell">Like "canyon" or Spanish ñ — palatal nasal, can begin a word</td>
+          <td class="example-word">nyaman</td>
+          <td><button class="tts-btn" onclick="pronounce('nyaman')"><i class="fa-solid fa-volume-low"></i></button></td>
+        </tr>
+        <tr>
+          <td class="spelling-cell">r</td>
+          <td class="sound-cell">tapped / trilled</td>
+          <td class="notes-cell">Tongue tap or light trill — never the English "r". Pronounced clearly in all positions including word-final.</td>
+          <td class="example-word">rasa</td>
+          <td><button class="tts-btn" onclick="pronounce('rasa')"><i class="fa-solid fa-volume-low"></i></button></td>
+        </tr>
+        <tr>
+          <td class="spelling-cell">sy</td>
+          <td class="sound-cell">"sh"</td>
+          <td class="notes-cell"><span class="badge-arabic">Arabic loanword</span> Like "show" — <em>syarat</em> (requirement), <em>syukur</em> (gratitude)</td>
+          <td class="example-word">syarat</td>
+          <td><button class="tts-btn" onclick="pronounce('syarat')"><i class="fa-solid fa-volume-low"></i></button></td>
+        </tr>
+        <tr>
+          <td class="spelling-cell">v</td>
+          <td class="sound-cell">"f" or "v"</td>
+          <td class="notes-cell">In loanwords — many speakers use "f"; some use "v". Interchangeable in practice.</td>
+          <td class="example-word">visi</td>
+          <td><button class="tts-btn" onclick="pronounce('visi')"><i class="fa-solid fa-volume-low"></i></button></td>
+        </tr>
+        <tr>
+          <td class="spelling-cell">-k (final)</td>
+          <td class="sound-cell">glottal stop</td>
+          <td class="notes-cell">Word-final <em>k</em> is typically an unreleased glottal stop, not a full /k/ burst</td>
+          <td class="example-word">tidak</td>
+          <td><button class="tts-btn" onclick="pronounce('tidak')"><i class="fa-solid fa-volume-low"></i></button></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ===================== 3. STRESS ===================== -->
+  <div class="section">
+    <h2>3. Stress</h2>
+    <p class="section-desc">
+      Indonesian stress is generally predictable but lighter and less prominent than in English.
+    </p>
+    <div class="key-note">
+      <strong>Default rule:</strong> Stress falls on the <strong>penultimate (second-to-last) syllable</strong>.<br>
+      <strong>Exception:</strong> If the penultimate syllable contains a <em>pepet e</em> (schwa), stress shifts to the <strong>final syllable</strong> instead.
+    </div>
+    <table class="ref-table">
+      <thead>
+        <tr>
+          <th>Word</th>
+          <th>Breakdown</th>
+          <th>Rule</th>
+          <th><i class="fa-solid fa-volume-low"></i></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="example-word">makan</td>
+          <td class="sound-cell">MA-kan</td>
+          <td class="notes-cell">Penultimate — standard rule</td>
+          <td><button class="tts-btn" onclick="pronounce('makan')"><i class="fa-solid fa-volume-low"></i></button></td>
+        </tr>
+        <tr>
+          <td class="example-word">bicara</td>
+          <td class="sound-cell">bi-CA-ra</td>
+          <td class="notes-cell">Penultimate — standard rule</td>
+          <td><button class="tts-btn" onclick="pronounce('bicara')"><i class="fa-solid fa-volume-low"></i></button></td>
+        </tr>
+        <tr>
+          <td class="example-word">benar</td>
+          <td class="sound-cell">be-NAR</td>
+          <td class="notes-cell">Pepet e in penultimate → stress shifts to final</td>
+          <td><button class="tts-btn" onclick="pronounce('benar')"><i class="fa-solid fa-volume-low"></i></button></td>
+        </tr>
+        <tr>
+          <td class="example-word">teman</td>
+          <td class="sound-cell">TE-man</td>
+          <td class="notes-cell">Penultimate e here is taling (clear "eh") → stays penultimate</td>
+          <td><button class="tts-btn" onclick="pronounce('teman')"><i class="fa-solid fa-volume-low"></i></button></td>
+        </tr>
+        <tr>
+          <td class="example-word">sekolah</td>
+          <td class="sound-cell">se-KO-lah</td>
+          <td class="notes-cell">Pepet e in first syllable; penultimate is <em>ko</em> → standard penultimate</td>
+          <td><button class="tts-btn" onclick="pronounce('sekolah')"><i class="fa-solid fa-volume-low"></i></button></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ===================== 4. AFFIXES & NASAL ASSIMILATION ===================== -->
+  <div class="section">
+    <h2>4. Prefixes &amp; Nasal Assimilation</h2>
+    <p class="section-desc">
+      The active verb prefix <strong>me-</strong> undergoes <em>nasal assimilation</em> — its final consonant changes to match
+      the first consonant of the root word. This is one of the most important pronunciation patterns in Indonesian.
+    </p>
+    <div class="key-note-blue">
+      <strong>me- assimilation rules:</strong> The nasal consonant added matches the place of articulation of the root's first consonant.
+      Roots beginning with voiced stops (b, d, g, j) keep their consonant; roots beginning with voiceless stops (p, t, k, s) drop the initial consonant.
+    </div>
+    <div class="affix-grid">
+      <div class="affix-card">
+        <div class="affix-label">me- + b/f/v → mem-</div>
+        <div class="affix-rule">Bilabial nasal — root consonant kept</div>
+        <div class="affix-examples">
+          <span class="affix-pill"><em>mem</em>baca</span>
+          <span class="affix-pill"><em>mem</em>beli</span>
+          <span class="affix-pill"><em>mem</em>buat</span>
+        </div>
+      </div>
+      <div class="affix-card">
+        <div class="affix-label">me- + p → mem-, p drops</div>
+        <div class="affix-rule">Bilabial nasal — voiceless p is dropped</div>
+        <div class="affix-examples">
+          <span class="affix-pill"><em>mem</em>ukul (← pukul)</span>
+          <span class="affix-pill"><em>mem</em>akai (← pakai)</span>
+        </div>
+      </div>
+      <div class="affix-card">
+        <div class="affix-label">me- + d/j → men-</div>
+        <div class="affix-rule">Alveolar nasal — root consonant kept</div>
+        <div class="affix-examples">
+          <span class="affix-pill"><em>men</em>dengar</span>
+          <span class="affix-pill"><em>men</em>jual</span>
+        </div>
+      </div>
+      <div class="affix-card">
+        <div class="affix-label">me- + t/c → men-, t drops</div>
+        <div class="affix-rule">Alveolar nasal — voiceless t dropped; c treated as voiced</div>
+        <div class="affix-examples">
+          <span class="affix-pill"><em>men</em>ulis (← tulis)</span>
+          <span class="affix-pill"><em>men</em>cari (← cari)</span>
+        </div>
+      </div>
+      <div class="affix-card">
+        <div class="affix-label">me- + g → meng-</div>
+        <div class="affix-rule">Velar nasal — root consonant kept</div>
+        <div class="affix-examples">
+          <span class="affix-pill"><em>meng</em>gunakan</span>
+          <span class="affix-pill"><em>meng</em>ambil</span>
+        </div>
+      </div>
+      <div class="affix-card">
+        <div class="affix-label">me- + k → meng-, k drops</div>
+        <div class="affix-rule">Velar nasal — voiceless k is dropped</div>
+        <div class="affix-examples">
+          <span class="affix-pill"><em>meng</em>irimi (← kirim)</span>
+          <span class="affix-pill"><em>meng</em>enal (← kenal)</span>
+        </div>
+      </div>
+      <div class="affix-card">
+        <div class="affix-label">me- + s → meny-, s drops</div>
+        <div class="affix-rule">Palatal nasal — voiceless s is replaced by ny</div>
+        <div class="affix-examples">
+          <span class="affix-pill"><em>meny</em>ukai (← suka)</span>
+          <span class="affix-pill"><em>meny</em>ebut (← sebut)</span>
+        </div>
+      </div>
+      <div class="affix-card">
+        <div class="affix-label">me- + vowel → meng-</div>
+        <div class="affix-rule">Velar nasal added before vowel-initial roots</div>
+        <div class="affix-examples">
+          <span class="affix-pill"><em>meng</em>ambil</span>
+          <span class="affix-pill"><em>meng</em>ingat</span>
+          <span class="affix-pill"><em>meng</em>ucap</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== 5. COLLOQUIAL REDUCTIONS ===================== -->
+  <div class="section">
+    <h2>5. Colloquial Reductions</h2>
+    <p class="section-desc">
+      Everyday spoken Indonesian (especially in Jakarta) differs significantly from formal written Indonesian.
+      These reductions are extremely common and you will hear them constantly.
+    </p>
+    <table class="ref-table">
+      <thead>
+        <tr>
+          <th>Formal</th>
+          <th>Colloquial</th>
+          <th>Meaning</th>
+          <th><i class="fa-solid fa-volume-low"></i></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="example-word">tidak</td>
+          <td class="spelling-cell">nggak / gak / enggak</td>
+          <td class="notes-cell">no / not</td>
+          <td><button class="tts-btn" onclick="pronounce('tidak')"><i class="fa-solid fa-volume-low"></i></button></td>
+        </tr>
+        <tr>
+          <td class="example-word">sudah</td>
+          <td class="spelling-cell">udah / dah</td>
+          <td class="notes-cell">already / done</td>
+          <td><button class="tts-btn" onclick="pronounce('sudah')"><i class="fa-solid fa-volume-low"></i></button></td>
+        </tr>
+        <tr>
+          <td class="example-word">belum</td>
+          <td class="spelling-cell">blum</td>
+          <td class="notes-cell">not yet</td>
+          <td><button class="tts-btn" onclick="pronounce('belum')"><i class="fa-solid fa-volume-low"></i></button></td>
+        </tr>
+        <tr>
+          <td class="example-word">saya</td>
+          <td class="spelling-cell">aku / gue (Jakarta)</td>
+          <td class="notes-cell">I / me (formal → informal → Betawi slang)</td>
+          <td><button class="tts-btn" onclick="pronounce('saya')"><i class="fa-solid fa-volume-low"></i></button></td>
+        </tr>
+        <tr>
+          <td class="example-word">kamu</td>
+          <td class="spelling-cell">lo / lu (Jakarta)</td>
+          <td class="notes-cell">you (formal → Betawi slang)</td>
+          <td><button class="tts-btn" onclick="pronounce('kamu')"><i class="fa-solid fa-volume-low"></i></button></td>
+        </tr>
+        <tr>
+          <td class="example-word">bagaimana</td>
+          <td class="spelling-cell">gimana</td>
+          <td class="notes-cell">how / what about</td>
+          <td><button class="tts-btn" onclick="pronounce('bagaimana')"><i class="fa-solid fa-volume-low"></i></button></td>
+        </tr>
+        <tr>
+          <td class="example-word">yang</td>
+          <td class="spelling-cell">yang / yg</td>
+          <td class="notes-cell">that / which / who (written shorthand common in SMS/chat)</td>
+          <td><button class="tts-btn" onclick="pronounce('yang')"><i class="fa-solid fa-volume-low"></i></button></td>
+        </tr>
+        <tr>
+          <td class="example-word">mengapa</td>
+          <td class="spelling-cell">kenapa / knp</td>
+          <td class="notes-cell">why</td>
+          <td><button class="tts-btn" onclick="pronounce('mengapa')"><i class="fa-solid fa-volume-low"></i></button></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</div><!-- /.pron-page -->
+
+<script>
+  function pronounce(text) {
+    if (!window.speechSynthesis) return;
+    var utt = new SpeechSynthesisUtterance(text);
+    utt.lang = 'id-ID';
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(utt);
+  }
+</script>
+
+</body>
+</html>

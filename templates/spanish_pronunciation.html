@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Spanish Pronunciation Guide</title>
+  <link rel="stylesheet" href="/static/shared.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <style>
+    :root {
+      --primary:    #C60B1E;
+      --primary-dk: #9A0918;
+      --accent:     #C60B1E;
+      --accent2:    #FFC400;
+      --lgrey:      #FDF8F0;
+      --dgrey:      #6B7280;
+      --red:        #C60B1E;
+      --green:      #2a9d4e;
+      --amber:      #d97706;
+    }
+
+    /* Page layout */
+    .pron-page {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 0 16px 48px;
+    }
+
+    /* Back link bar */
+    .back-bar {
+      background: var(--primary-dk);
+      padding: 8px 20px;
+    }
+    .back-bar a {
+      color: rgba(255,255,255,0.75);
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 600;
+      transition: color 0.2s;
+    }
+    .back-bar a:hover { color: white; }
+
+    /* Page title */
+    .page-title {
+      color: var(--primary);
+      font-size: 28px;
+      font-weight: 700;
+      margin: 28px 0 6px;
+    }
+    .page-subtitle {
+      color: var(--dgrey);
+      font-size: 14px;
+      margin-bottom: 28px;
+      line-height: 1.5;
+    }
+
+    /* Sections */
+    .section {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.07);
+      padding: 24px;
+      margin-bottom: 28px;
+    }
+    .section h2 {
+      color: var(--primary);
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 6px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid var(--lgrey);
+    }
+    .section-desc {
+      color: var(--dgrey);
+      font-size: 13px;
+      margin-bottom: 14px;
+      line-height: 1.5;
+    }
+
+    /* Reference tables */
+    .ref-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+    .ref-table th {
+      background: var(--primary);
+      color: white;
+      padding: 8px 12px;
+      text-align: left;
+      font-weight: 600;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+    .ref-table td {
+      padding: 9px 12px;
+      border-bottom: 1px solid #EEF2F6;
+      vertical-align: middle;
+    }
+    .ref-table tr:nth-child(even) td { background: #F8FAFC; }
+    .ref-table tr:hover td { background: #FFF5F5; }
+
+    /* Cell styles */
+    .char-cell {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--primary);
+    }
+    .spelling-cell {
+      font-family: monospace;
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--primary);
+    }
+    .sound-cell {
+      font-family: monospace;
+      font-size: 13px;
+      color: #555;
+    }
+    .approx-cell {
+      font-style: italic;
+      color: #444;
+      font-size: 13px;
+    }
+    .notes-cell {
+      color: var(--dgrey);
+      font-size: 12px;
+    }
+    .example-word {
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--primary);
+    }
+    .stress-word {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--primary);
+    }
+    .stress-breakdown {
+      font-size: 13px;
+      color: var(--dgrey);
+      font-family: monospace;
+    }
+
+    /* TTS button */
+    .tts-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 18px;
+      padding: 4px 6px;
+      border-radius: 6px;
+      transition: background 0.15s;
+      line-height: 1;
+    }
+    .tts-btn:hover  { background: #FDECEA; }
+    .tts-btn:active { background: #FBD4D0; }
+
+    /* Key note box */
+    .key-note {
+      background: #FFF8E7;
+      border-left: 4px solid var(--amber);
+      border-radius: 4px;
+      padding: 10px 14px;
+      font-size: 13px;
+      color: #5a4000;
+      margin-bottom: 14px;
+      line-height: 1.5;
+    }
+    .key-note-red {
+      background: #FFF0F0;
+      border-left: 4px solid var(--primary);
+      border-radius: 4px;
+      padding: 10px 14px;
+      font-size: 13px;
+      color: #5a0000;
+      margin-bottom: 14px;
+      line-height: 1.5;
+    }
+
+    /* Dialect badges */
+    .badge-spain {
+      display: inline-block;
+      background: #E8F0FE;
+      color: #1a4fbf;
+      border-radius: 4px;
+      font-size: 11px;
+      padding: 1px 6px;
+      font-weight: 600;
+    }
+    .badge-latam {
+      display: inline-block;
+      background: #EAF4EA;
+      color: var(--green);
+      border-radius: 4px;
+      font-size: 11px;
+      padding: 1px 6px;
+      font-weight: 600;
+    }
+    .badge-both {
+      display: inline-block;
+      background: #F3F3F3;
+      color: #444;
+      border-radius: 4px;
+      font-size: 11px;
+      padding: 1px 6px;
+      font-weight: 600;
+    }
+
+    /* Stress rule cards */
+    .stress-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .stress-card {
+      background: var(--lgrey);
+      border-radius: 8px;
+      padding: 12px 14px;
+    }
+    .stress-rule {
+      font-weight: 700;
+      font-size: 13px;
+      color: var(--primary);
+      margin-bottom: 4px;
+    }
+    .stress-cond {
+      font-size: 12px;
+      color: var(--dgrey);
+      margin-bottom: 8px;
+    }
+    .stress-examples {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .stress-pill {
+      background: white;
+      border-radius: 20px;
+      padding: 3px 10px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #333;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    }
+    .stress-pill em {
+      color: var(--primary);
+      font-style: normal;
+      font-weight: 700;
+    }
+
+    /* Responsive */
+    @media (max-width: 600px) {
+      .ref-table th:nth-child(3),
+      .ref-table td:nth-child(3) { display: none; }
+      .stress-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<div id="topbar">
+  <h1>Spanish Pronunciation Guide</h1>
+</div>
+
+<div class="back-bar">
+  <a href="/spanish">← Back to flashcards</a>
+</div>
+
+<div class="pron-page">
+
+  <h1 class="page-title">Pronunciation Reference</h1>
+  <p class="page-subtitle">
+    A complete overview of Spanish vowels, stress rules, and consonants.
+    Click <i class="fa-solid fa-volume-low"></i> on any row to hear the example word via text-to-speech.
+  </p>
+
+  <!-- ===================== 1. VOWELS ===================== -->
+  <div class="section">
+    <h2>1. The 5 Vowels</h2>
+    <div class="key-note">
+      <strong>Key point:</strong> Spanish vowels are <em>pure and short</em> — each one has a single, consistent sound.
+      Unlike English, the vowels never diphthongize (e.g. Spanish <em>o</em> is always "oh", never "oh-w").
+    </div>
+    <table class="ref-table">
+      <thead>
+        <tr>
+          <th>Vowel</th>
+          <th>Approx. English</th>
+          <th>Notes</th>
+          <th>Example</th>
+          <th><i class="fa-solid fa-volume-low"></i></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="char-cell">a</td>
+          <td class="approx-cell">"father"</td>
+          <td class="notes-cell">Open, never "ay"</td>
+          <td class="example-word">casa</td>
+          <td><button class="tts-btn" onclick="pronounce('casa')"><i class="fa-solid fa-volume-low"></i></button></td>
+        </tr>
+        <tr>
+          <td class="char-cell">e</td>
+          <td class="approx-cell">"bed"</td>
+          <td class="notes-cell">Mid-front, never "ee"</td>
+          <td class="example-word">mesa</td>
+          <td><button class="tts-btn" onclick="pronounce('mesa')"><i class="fa-solid fa-volume-low"></i></button></td>
+        </tr>
+        <tr>
+          <td class="char-cell">i</td>
+          <td class="approx-cell">"bee"</td>
+          <td class="notes-cell">High-front, always pure</td>
+          <td class="example-word">libro</td>
+          <td><button class="tts-btn" onclick="pronounce('libro')"><i class="fa-solid fa-volume-low"></i></button></td>
+        </tr>
+        <tr>
+          <td class="char-cell">o</td>
+          <td class="approx-cell">"boat" (pure)</td>
+          <td class="notes-cell">No "oh-w" glide</td>
+          <td class="example-word">como</td>
+          <td><button class="tts-btn" onclick="pronounce('como')"><i class="fa-solid fa-volume-low"></i></button></td>
+        </tr>
+        <tr>
+          <td class="char-cell">u</td>
+          <td class="approx-cell">"boot" (pure)</td>
+          <td class="notes-cell">Rounded, no "oo-w" glide. Silent after q and in gue/gui.</td>
+          <td class="example-word">luna</td>
+          <td><button class="tts-btn" onclick="pronounce('luna')"><i class="fa-solid fa-volume-low"></i></button></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ===================== 2. STRESS & ACCENT MARKS ===================== -->
+  <div class="section">
+    <h2>2. Stress &amp; Accent Marks</h2>
+    <p class="section-desc">
+      Spanish stress follows predictable rules. A written accent (tilde: á é í ó ú) always overrides them.
+      The tilde never changes vowel quality — only stress placement.
+    </p>
+
+    <div class="stress-grid">
+      <div class="stress-card">
+        <div class="stress-rule">Rule 1 — Penultimate stress</div>
+        <div class="stress-cond">Words ending in a vowel, <strong>n</strong>, or <strong>s</strong></div>
+        <div class="stress-examples">
+          <span class="stress-pill"><em>ca</em>-sa</span>
+          <span class="stress-pill"><em>co</em>-men</span>
+          <span class="stress-pill"><em>li</em>-bros</span>
+          <span class="stress-pill"><em>ha</em>-blan</span>
+        </div>
+      </div>
+      <div class="stress-card">
+        <div class="stress-rule">Rule 2 — Final stress</div>
+        <div class="stress-cond">Words ending in any other consonant</div>
+        <div class="stress-examples">
+          <span class="stress-pill">ciu-<em>dad</em></span>
+          <span class="stress-pill">ha-<em>blar</em></span>
+          <span class="stress-pill">fe-<em>liz</em></span>
+          <span class="stress-pill">pa-<em>red</em></span>
+        </div>
+      </div>
+      <div class="stress-card">
+        <div class="stress-rule">Rule 3 — Tilde overrides</div>
+        <div class="stress-cond">Written accent marks any exception</div>
+        <div class="stress-examples">
+          <span class="stress-pill"><em>fá</em>-cil</span>
+          <span class="stress-pill">ha-<em>bló</em></span>
+          <span class="stress-pill"><em>mú</em>-si-ca</span>
+          <span class="stress-pill">ca-<em>fé</em></span>
+        </div>
+      </div>
+    </div>
+
+    <table class="ref-table">
+      <thead>
+        <tr>
+          <th>Word</th>
+          <th>Breakdown</th>
+          <th>Rule applied</th>
+          <th><i class="fa-solid fa-volume-low"></i></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="example-word">casa</td>
+          <td class="stress-breakdown">CA-sa</td>
+          <td class="notes-cell">Ends in vowel → penultimate</td>
+          <td><button class="tts-btn" onclick="pronounce('casa')"><i class="fa-solid fa-volume-low"></i></button></td>
+        </tr>
+        <tr>
+          <td class="example-word">ciudad</td>
+          <td class="stress-breakdown">ciu-DAD</td>
+          <td class="notes-cell">Ends in -d → final</td>
+          <td><button class="tts-btn" onclick="pronounce('ciudad')"><i class="fa-solid fa-volume-low"></i></button></td>
+        </tr>
+        <tr>
+          <td class="example-word">fácil</td>
+          <td class="stress-breakdown">FÁ-cil</td>
+          <td class="notes-cell">Ends in -l (→ final rule), tilde overrides to penultimate</td>
+          <td><button class="tts-btn" onclick="pronounce('fácil')"><i class="fa-solid fa-volume-low"></i></button></td>
+        </tr>
+        <tr>
+          <td class="example-word">música</td>
+          <td class="stress-breakdown">MÚ-si-ca</td>
+          <td class="notes-cell">Ends in vowel (→ penultimate), tilde overrides to antepenultimate</td>
+          <td><button class="tts-btn" onclick="pronounce('música')"><i class="fa-solid fa-volume-low"></i></button></td>
+        </tr>
+        <tr>
+          <td class="example-word">habló</td>
+          <td class="stress-breakdown">ha-BLÓ</td>
+          <td class="notes-cell">Ends in vowel (→ penultimate), tilde overrides to final</td>
+          <td><button class="tts-btn" onclick="pronounce('habló')"><i class="fa-solid fa-volume-low"></i></button></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ===================== 3. KEY CONSONANTS ===================== -->
+  <div class="section">
+    <h2>3. Key Consonants</h2>
+    <p class="section-desc">
+      Most Spanish consonants match their English equivalents. These are the ones that trip up learners.
+    </p>
+    <table class="ref-table">
+      <thead>
+        <tr>
+          <th>Spelling</th>
+          <th>Sound</th>
+          <th>Notes</th>
+          <th>Example</th>
+          <th><i class="fa-solid fa-volume-low"></i></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="spelling-cell">b / v</td>
+          <td class="sound-cell">"b"</td>
+          <td class="notes-cell">Both letters are identical in speech — no V-sound in Spanish</td>
+          <td class="example-word">vino / bien</td>
+          <td><button class="tts-btn" onclick="pronounce('vino bien')"><i class="fa-solid fa-volume-low"></i></button></td>
+        </tr>
+        <tr>
+          <td class="spelling-cell">c (+ e/i)</td>
+          <td class="sound-cell">"s" / "th"</td>
+          <td class="notes-cell"><span class="badge-latam">LatAm</span> "s" &nbsp; <span class="badge-spain">Spain</span> "th" as in <em>think</em></td>
+          <td class="example-word">cero</td>
+          <td><button class="tts-btn" onclick="pronounce('cero')"><i class="fa-solid fa-volume-low"></i></button></td>
+        </tr>
+        <tr>
+          <td class="spelling-cell">c (+ a/o/u)</td>
+          <td class="sound-cell">"k"</td>
+          <td class="notes-cell">Hard k — always</td>
+          <td class="example-word">casa</td>
+          <td><button class="tts-btn" onclick="pronounce('casa')"><i class="fa-solid fa-volume-low"></i></button></td>
+        </tr>
+        <tr>
+          <td class="spelling-cell">g (+ e/i)</td>
+          <td class="sound-cell">"kh"</td>
+          <td class="notes-cell">Harsh fricative like Scottish <em>loch</em> or German <em>Bach</em></td>
+          <td class="example-word">gente</td>
+          <td><button class="tts-btn" onclick="pronounce('gente')"><i class="fa-solid fa-volume-low"></i></button></td>
+        </tr>
+        <tr>
+          <td class="spelling-cell">g (+ a/o/u)</td>
+          <td class="sound-cell">"g"</td>
+          <td class="notes-cell">Hard g — like "go"</td>
+          <td class="example-word">gato</td>
+          <td><button class="tts-btn" onclick="pronounce('gato')"><i class="fa-solid fa-volume-low"></i></button></td>
+        </tr>
+        <tr>
+          <td class="spelling-cell">gu (+ e/i)</td>
+          <td class="sound-cell">"g"</td>
+          <td class="notes-cell">The <em>u</em> is silent — spelling rule to keep hard g before e/i</td>
+          <td class="example-word">guerra</td>
+          <td><button class="tts-btn" onclick="pronounce('guerra')"><i class="fa-solid fa-volume-low"></i></button></td>
+        </tr>
+        <tr>
+          <td class="spelling-cell">gü (+ e/i)</td>
+          <td class="sound-cell">"gw"</td>
+          <td class="notes-cell">Diaeresis (ü) means the u <em>is</em> pronounced</td>
+          <td class="example-word">pingüino</td>
+          <td><button class="tts-btn" onclick="pronounce('pingüino')"><i class="fa-solid fa-volume-low"></i></button></td>
+        </tr>
+        <tr>
+          <td class="spelling-cell">h</td>
+          <td class="sound-cell">silent</td>
+          <td class="notes-cell">Always silent in Spanish (except in borrowed words)</td>
+          <td class="example-word">hola</td>
+          <td><button class="tts-btn" onclick="pronounce('hola')"><i class="fa-solid fa-volume-low"></i></button></td>
+        </tr>
+        <tr>
+          <td class="spelling-cell">j</td>
+          <td class="sound-cell">"kh"</td>
+          <td class="notes-cell">Same harsh fricative as g + e/i; stronger in Spain</td>
+          <td class="example-word">jugar</td>
+          <td><button class="tts-btn" onclick="pronounce('jugar')"><i class="fa-solid fa-volume-low"></i></button></td>
+        </tr>
+        <tr>
+          <td class="spelling-cell">ll</td>
+          <td class="sound-cell">"y" / "zh"</td>
+          <td class="notes-cell"><span class="badge-latam">LatAm</span> like "y" in <em>yes</em> &nbsp; <span class="badge-spain">Rioplatense</span> "zh" like <em>measure</em></td>
+          <td class="example-word">llama</td>
+          <td><button class="tts-btn" onclick="pronounce('llama')"><i class="fa-solid fa-volume-low"></i></button></td>
+        </tr>
+        <tr>
+          <td class="spelling-cell">ñ</td>
+          <td class="sound-cell">"ny"</td>
+          <td class="notes-cell">Like "canyon" or Spanish ñ — palatal nasal</td>
+          <td class="example-word">año</td>
+          <td><button class="tts-btn" onclick="pronounce('año')"><i class="fa-solid fa-volume-low"></i></button></td>
+        </tr>
+        <tr>
+          <td class="spelling-cell">qu (+ e/i)</td>
+          <td class="sound-cell">"k"</td>
+          <td class="notes-cell">The <em>u</em> is always silent; spelling rule to keep hard k</td>
+          <td class="example-word">queso</td>
+          <td><button class="tts-btn" onclick="pronounce('queso')"><i class="fa-solid fa-volume-low"></i></button></td>
+        </tr>
+        <tr>
+          <td class="spelling-cell">r (initial)</td>
+          <td class="sound-cell">rolled "rr"</td>
+          <td class="notes-cell">At start of word or after n/l/s — always strongly trilled</td>
+          <td class="example-word">rosa</td>
+          <td><button class="tts-btn" onclick="pronounce('rosa')"><i class="fa-solid fa-volume-low"></i></button></td>
+        </tr>
+        <tr>
+          <td class="spelling-cell">r (medial)</td>
+          <td class="sound-cell">single tap</td>
+          <td class="notes-cell">Between vowels — single tongue tap, like "tt" in American <em>butter</em></td>
+          <td class="example-word">pero</td>
+          <td><button class="tts-btn" onclick="pronounce('pero')"><i class="fa-solid fa-volume-low"></i></button></td>
+        </tr>
+        <tr>
+          <td class="spelling-cell">rr</td>
+          <td class="sound-cell">rolled</td>
+          <td class="notes-cell">Strongly trilled — contrasts with single r; <em>pero</em> (but) vs <em>perro</em> (dog)</td>
+          <td class="example-word">perro</td>
+          <td><button class="tts-btn" onclick="pronounce('perro')"><i class="fa-solid fa-volume-low"></i></button></td>
+        </tr>
+        <tr>
+          <td class="spelling-cell">x</td>
+          <td class="sound-cell">"ks" / "s" / "kh"</td>
+          <td class="notes-cell">Usually "ks"; "s" in some prefixes (ex-); "kh" in place names (México, Oaxaca)</td>
+          <td class="example-word">taxi</td>
+          <td><button class="tts-btn" onclick="pronounce('taxi')"><i class="fa-solid fa-volume-low"></i></button></td>
+        </tr>
+        <tr>
+          <td class="spelling-cell">y</td>
+          <td class="sound-cell">"y" / "zh"</td>
+          <td class="notes-cell">As consonant: same as ll — regional variation. As vowel (e.g. <em>y</em> = and): sounds like "ee"</td>
+          <td class="example-word">yo</td>
+          <td><button class="tts-btn" onclick="pronounce('yo')"><i class="fa-solid fa-volume-low"></i></button></td>
+        </tr>
+        <tr>
+          <td class="spelling-cell">z</td>
+          <td class="sound-cell">"s" / "th"</td>
+          <td class="notes-cell"><span class="badge-latam">LatAm</span> "s" &nbsp; <span class="badge-spain">Spain</span> "th" as in <em>think</em></td>
+          <td class="example-word">zapato</td>
+          <td><button class="tts-btn" onclick="pronounce('zapato')"><i class="fa-solid fa-volume-low"></i></button></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ===================== 4. REGIONAL VARIATION ===================== -->
+  <div class="section">
+    <h2>4. Regional Variation</h2>
+    <p class="section-desc">
+      Spanish is spoken across 20+ countries. These are the most significant pronunciation differences you'll encounter.
+    </p>
+
+    <div class="key-note-red">
+      <strong>Seseo vs Distinción:</strong> In all of Latin America and the Canary Islands, <strong>c</strong> (before e/i) and <strong>z</strong> are pronounced as <em>/s/</em>.
+      In most of Spain, they are pronounced as <em>/θ/</em> ("th" as in <em>think</em>). Neither is "more correct" — both are standard.
+    </div>
+
+    <table class="ref-table">
+      <thead>
+        <tr>
+          <th>Feature</th>
+          <th><span class="badge-spain">Spain</span></th>
+          <th><span class="badge-latam">Latin America</span></th>
+          <th>Example</th>
+          <th><i class="fa-solid fa-volume-low"></i></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="notes-cell">c (+ e/i) and z</td>
+          <td class="sound-cell">"th" (think)</td>
+          <td class="sound-cell">"s"</td>
+          <td class="example-word">zapato</td>
+          <td><button class="tts-btn" onclick="pronounce('zapato')"><i class="fa-solid fa-volume-low"></i></button></td>
+        </tr>
+        <tr>
+          <td class="notes-cell">ll and y (consonant)</td>
+          <td class="sound-cell">"y" (most regions)</td>
+          <td class="sound-cell">"y"; "zh" in Río de la Plata (Argentina, Uruguay)</td>
+          <td class="example-word">pollo</td>
+          <td><button class="tts-btn" onclick="pronounce('pollo')"><i class="fa-solid fa-volume-low"></i></button></td>
+        </tr>
+        <tr>
+          <td class="notes-cell">s (word-final)</td>
+          <td class="sound-cell">clear /s/</td>
+          <td class="sound-cell">May weaken to /h/ or drop (Caribbean, coastal LatAm)</td>
+          <td class="example-word">estos</td>
+          <td><button class="tts-btn" onclick="pronounce('estos')"><i class="fa-solid fa-volume-low"></i></button></td>
+        </tr>
+        <tr>
+          <td class="notes-cell">vosotros (2nd-pl informal)</td>
+          <td class="sound-cell">Common — habláis, coméis</td>
+          <td class="sound-cell">Not used — ustedes used instead</td>
+          <td class="example-word">habláis</td>
+          <td><button class="tts-btn" onclick="pronounce('habláis')"><i class="fa-solid fa-volume-low"></i></button></td>
+        </tr>
+        <tr>
+          <td class="notes-cell">d (intervocalic)</td>
+          <td class="sound-cell">Strongly fricative /ð/</td>
+          <td class="sound-cell">Varies — can be weakened or dropped (e.g. <em>cansado</em> → "cansao")</td>
+          <td class="example-word">ciudad</td>
+          <td><button class="tts-btn" onclick="pronounce('ciudad')"><i class="fa-solid fa-volume-low"></i></button></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ===================== 5. DIPHTHONGS ===================== -->
+  <div class="section">
+    <h2>5. Diphthongs &amp; Hiatus</h2>
+    <p class="section-desc">
+      When two vowels appear together, they either form a diphthong (one syllable) or a hiatus (two syllables).
+      The weak vowels are <strong>i</strong> and <strong>u</strong>; the strong vowels are <strong>a, e, o</strong>.
+    </p>
+    <div class="key-note">
+      <strong>Diphthong</strong> (one syllable): weak + strong, or weak + weak — <em>ai, ei, oi, au, eu, ia, ie, io, ua, ue, uo, ui, iu</em><br>
+      <strong>Hiatus</strong> (two syllables): strong + strong, or weak with tilde — <em>ae, ao, ea, oa, eo</em> or <em>ío, úa</em>
+    </div>
+    <table class="ref-table">
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Vowels</th>
+          <th>Syllables</th>
+          <th>Example</th>
+          <th><i class="fa-solid fa-volume-low"></i></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="notes-cell">Diphthong</td>
+          <td class="spelling-cell">ie</td>
+          <td class="stress-breakdown">tie-ne (2)</td>
+          <td class="example-word">tiene</td>
+          <td><button class="tts-btn" onclick="pronounce('tiene')"><i class="fa-solid fa-volume-low"></i></button></td>
+        </tr>
+        <tr>
+          <td class="notes-cell">Diphthong</td>
+          <td class="spelling-cell">ue</td>
+          <td class="stress-breakdown">pue-de (2)</td>
+          <td class="example-word">puede</td>
+          <td><button class="tts-btn" onclick="pronounce('puede')"><i class="fa-solid fa-volume-low"></i></button></td>
+        </tr>
+        <tr>
+          <td class="notes-cell">Diphthong</td>
+          <td class="spelling-cell">au</td>
+          <td class="stress-breakdown">au-to (2)</td>
+          <td class="example-word">auto</td>
+          <td><button class="tts-btn" onclick="pronounce('auto')"><i class="fa-solid fa-volume-low"></i></button></td>
+        </tr>
+        <tr>
+          <td class="notes-cell">Diphthong</td>
+          <td class="spelling-cell">ai / ay</td>
+          <td class="stress-breakdown">ai-re (2)</td>
+          <td class="example-word">aire</td>
+          <td><button class="tts-btn" onclick="pronounce('aire')"><i class="fa-solid fa-volume-low"></i></button></td>
+        </tr>
+        <tr>
+          <td class="notes-cell">Hiatus (strong+strong)</td>
+          <td class="spelling-cell">ea</td>
+          <td class="stress-breakdown">re-al (2)</td>
+          <td class="example-word">real</td>
+          <td><button class="tts-btn" onclick="pronounce('real')"><i class="fa-solid fa-volume-low"></i></button></td>
+        </tr>
+        <tr>
+          <td class="notes-cell">Hiatus (tilde breaks diphthong)</td>
+          <td class="spelling-cell">ío</td>
+          <td class="stress-breakdown">rí-o (2)</td>
+          <td class="example-word">río</td>
+          <td><button class="tts-btn" onclick="pronounce('río')"><i class="fa-solid fa-volume-low"></i></button></td>
+        </tr>
+        <tr>
+          <td class="notes-cell">Hiatus (tilde breaks diphthong)</td>
+          <td class="spelling-cell">úa</td>
+          <td class="stress-breakdown">con-ti-nú-a (4)</td>
+          <td class="example-word">continúa</td>
+          <td><button class="tts-btn" onclick="pronounce('continúa')"><i class="fa-solid fa-volume-low"></i></button></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</div><!-- /.pron-page -->
+
+<script>
+  function pronounce(text) {
+    if (!window.speechSynthesis) return;
+    var utt = new SpeechSynthesisUtterance(text);
+    utt.lang = 'es-ES';
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(utt);
+  }
+</script>
+
+</body>
+</html>

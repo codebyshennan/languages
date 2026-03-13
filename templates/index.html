@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Language Anki</title>
 <link rel="stylesheet" href="/static/shared.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 <style>
   .lang-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-top: 32px; }
   .lang-card {
@@ -13,31 +14,31 @@
     transition: transform 0.15s, box-shadow 0.15s;
   }
   .lang-card:hover { transform: translateY(-4px); box-shadow: 0 8px 30px rgba(0,0,0,0.12); }
-  .lang-card .flag  { font-size: 52px; margin-bottom: 12px; }
+  .lang-card .flag  { font-size: 40px; margin-bottom: 12px; color: var(--primary, #2C3E50); }
   .lang-card h2     { font-size: 20px; font-weight: 700; margin-bottom: 6px; }
   .lang-card p      { font-size: 13px; color: var(--dgrey); }
 </style>
 </head>
 <body>
 <div id="topbar" style="background:#2C3E50;">
-  <h1>&#127760; Language Anki</h1>
+  <h1><i class="fa-solid fa-earth-asia"></i> Language Anki</h1>
 </div>
 <div id="main" style="text-align:center;padding-top:48px;">
   <h2 style="color:#2C3E50;font-size:28px;margin-bottom:8px;">Choose a language</h2>
   <p style="color:var(--dgrey);">SM-2 spaced repetition &#183; Progress saved in browser</p>
   <div class="lang-grid">
-    <a class="lang-card" href="/bahasa">
-      <div class="flag">&#x1F1EE;&#x1F1E9;</div>
+    <a class="lang-card" href="/bahasa" style="--primary:#1A3C5E">
+      <div class="flag"><i class="fa-solid fa-language"></i></div>
       <h2>Bahasa Indonesia</h2>
       <p>1&thinsp;962 words &#183; Malay included</p>
     </a>
-    <a class="lang-card" href="/viet">
-      <div class="flag">&#x1F1FB;&#x1F1F3;</div>
+    <a class="lang-card" href="/viet" style="--primary:#8B0000">
+      <div class="flag"><i class="fa-solid fa-language"></i></div>
       <h2>Vietnamese</h2>
       <p>3&thinsp;000 words &#183; Cantonese connections</p>
     </a>
-    <a class="lang-card" href="/spanish">
-      <div class="flag">&#x1F1EA;&#x1F1F8;</div>
+    <a class="lang-card" href="/spanish" style="--primary:#C60B1E">
+      <div class="flag"><i class="fa-solid fa-language"></i></div>
       <h2>Spanish</h2>
       <p>3&thinsp;000 words &#183; Gender &amp; conjugation</p>
     </a>

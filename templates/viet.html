@@ -24,6 +24,20 @@
   .ans-notes    { font-size: 13px; color: #334455; font-style: italic;
                   background: #FFF8F0; border-left: 3px solid var(--accent2);
                   padding: 8px 12px; border-radius: 0 6px 6px 0; margin-bottom: 8px; }
+  #breakdown-panel {
+    margin-top: 12px; border-radius: 8px; overflow: hidden;
+    border: 1px solid #E0E8F0;
+  }
+  #breakdown-panel .cat-table th { background: var(--primary); }
+  #breakdown-panel .breakdown-footer {
+    padding: 6px 10px; font-size: 12px; background: var(--lgrey);
+    border-top: 1px solid #E0E8F0;
+  }
+  #breakdown-panel .breakdown-footer a { color: var(--accent); text-decoration: none; }
+  #breakdown-panel .breakdown-footer a:hover { text-decoration: underline; }
+  #breakdown-panel .pronounce-btn {
+    margin-top: 0; padding: 3px 10px; font-size: 12px;
+  }
 </style>
 </head>
 <body>
@@ -37,8 +51,9 @@
   <select id="cat-select"></select>
   <label style="color:rgba(255,255,255,0.6);font-size:13px;">Part:</label>
   <select id="part-select"></select>
+  <a href="/viet/pronunciation" class="mode-btn" style="text-decoration:none"><i class="fa-solid fa-book-open"></i> Guide</a>
   <div class="spacer"></div>
-  <a href="/viet/pronunciation" class="mode-btn" style="text-decoration:none" target="_blank"><i class="fa-solid fa-book-open"></i> Guide</a>
+  <a href="/" class="mode-btn" style="text-decoration:none"><i class="fa-solid fa-house"></i></a>
   <button id="stats-btn" onclick="openStats()"><i class="fa-solid fa-chart-bar"></i> Stats</button>
 </div>
 
@@ -50,7 +65,7 @@
 
 <div id="main">
   <div id="welcome">
-    <h2>&#x1F1FB;&#x1F1F3; Vietnamese &#8212; Spaced Repetition</h2>
+    <h2>Vietnamese &#8212; Spaced Repetition</h2>
     <p>3&thinsp;000 words &#183; SM-2 algorithm &#183; Cantonese connections</p>
     <div class="stat-grid">
       <div class="stat-box due"><div class="num" id="ov-due">&#8230;</div><div class="lbl">Due Today</div></div>
@@ -131,7 +146,7 @@
   <div class="modal">
     <div class="modal-header">
       <h3><i class="fa-solid fa-chart-bar"></i> Your Progress</h3>
-      <button class="modal-close" onclick="closeStats()">&#10005;</button>
+      <button class="modal-close" onclick="closeStats()"><i class="fa-solid fa-xmark"></i></button>
     </div>
     <div class="modal-body" id="modal-body">Loading&#8230;</div>
   </div>
@@ -153,29 +168,29 @@ var breakdownOpen = false;
 function renderBreakdown(word) {
   var syllables = window.VietSyllable ? window.VietSyllable.parse(word) : [];
   var toneColors = {
-    'ngang': '#777',
-    'huy\u1ec1n': '#1a6fbf',
-    'h\u1ecfi': '#2a9d4e',
+    'ngang': 'var(--dgrey)',
+    'huy\u1ec1n': 'var(--blue)',
+    'h\u1ecfi': 'var(--green)',
     'ng\u00e3': '#8b4fbf',
-    's\u1eafc': '#cc2233',
+    's\u1eafc': 'var(--red)',
     'n\u1eb7ng': '#7a3000'
   };
-  var html = '<table style="border-collapse:collapse;width:100%;margin-top:8px">';
+  var html = '<table class="cat-table">';
   html += '<tr><th>Syllable</th><th>Initial</th><th>Vowel</th><th>Final</th><th>Tone</th><th></th></tr>';
   for (var i = 0; i < syllables.length; i++) {
     var s = syllables[i];
-    var color = toneColors[s.tone] || '#333';
+    var color = toneColors[s.tone] || 'var(--primary)';
     html += '<tr>';
-    html += '<td>' + s.raw + '</td>';
+    html += '<td><strong>' + s.raw + '</strong></td>';
     html += '<td>' + (s.initial || '\u2014') + '</td>';
     html += '<td>' + (s.nucleus || '\u2014') + '</td>';
     html += '<td>' + (s.final || '\u2014') + '</td>';
-    html += '<td style="color:' + color + ';font-weight:bold">' + s.tone + '</td>';
-    html += '<td><button onclick="window.VietSyllable && window.VietSyllable.callPronounce(\'' + s.raw.replace(/\\/g, '\\\\').replace(/'/g, "\\'") + '\', \'vi-VN\')"><i class="fa-solid fa-volume-low"></i></button></td>';
+    html += '<td style="color:' + color + ';font-weight:700">' + s.tone + '</td>';
+    html += '<td><button class="pronounce-btn" onclick="window.VietSyllable && window.VietSyllable.callPronounce(\'' + s.raw.replace(/\\/g, '\\\\').replace(/'/g, "\\'") + '\', \'vi-VN\')"><i class="fa-solid fa-volume-low"></i></button></td>';
     html += '</tr>';
   }
   html += '</table>';
-  html += '<div style="margin-top:6px;font-size:0.85em"><a href="/viet/pronunciation" target="_blank"><i class="fa-solid fa-book-open"></i> Full Guide</a></div>';
+  html += '<div class="breakdown-footer"><a href="/viet/pronunciation"><i class="fa-solid fa-book-open"></i> Full Pronunciation Guide</a></div>';
   return html;
 }
 

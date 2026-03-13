@@ -158,6 +158,14 @@ def spanish():
 def viet_pronunciation():
     return render_template("viet_pronunciation.html")
 
+@app.route("/spanish/pronunciation")
+def spanish_pronunciation():
+    return render_template("spanish_pronunciation.html")
+
+@app.route("/bahasa/pronunciation")
+def bahasa_pronunciation():
+    return render_template("bahasa_pronunciation.html")
+
 # ── Run ───────────────────────────────────────────────────────────────────────
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=False)
+    app.run(host="0.0.0.0", port=5001, debug=False)
