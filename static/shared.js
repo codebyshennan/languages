@@ -195,6 +195,8 @@ function showScreen(name) {
   document.getElementById("welcome").style.display     = name === "home" ? "block" : "none";
   document.getElementById("card-wrap").style.display   = name === "card" ? "block" : "none";
   document.getElementById("session-end").style.display = name === "end"  ? "block" : "none";
+  var btnStart = document.getElementById("btn-start");
+  if (btnStart) btnStart.style.display = name === "card" ? "none" : "block";
 }
 function setProg(pct, label, cor) {
   document.getElementById("prog-bar").style.width   = pct + "%";
@@ -312,6 +314,20 @@ function sessionEnd() {
 }
 
 function goHome() { showScreen("home"); refreshOverview(); setProg(0, "Ready", 0); }
+
+// ── Nav toggle ──────────────────────────────────────────────────────────────
+function toggleNav() {
+  var menu = document.getElementById("nav-menu");
+  if (menu) menu.classList.toggle("open");
+}
+document.addEventListener("click", function(e) {
+  var menu   = document.getElementById("nav-menu");
+  var toggle = document.getElementById("nav-toggle");
+  if (!menu || !menu.classList.contains("open")) return;
+  if (!menu.contains(e.target) && e.target !== toggle && !toggle.contains(e.target)) {
+    menu.classList.remove("open");
+  }
+});
 
 // ── Pronounce ──────────────────────────────────────────────────────────────
 function pronounce() {
@@ -511,6 +527,7 @@ window.setMode      = setMode;
 window.openStats    = openStats;
 window.closeStats   = closeStats;
 window.goHome       = goHome;
+window.toggleNav    = toggleNav;
 
 init();
 })();

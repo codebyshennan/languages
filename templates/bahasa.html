@@ -27,14 +27,18 @@
 
 <div id="topbar">
   <h1><i class="fa-solid fa-language"></i> BAHASA ANKI</h1>
-  <button class="mode-btn active" id="btn-id-en" onclick="setMode('id_en')">ID &#8594; EN</button>
-  <button class="mode-btn"        id="btn-en-id" onclick="setMode('en_id')">EN &#8594; ID</button>
-  <label style="color:rgba(255,255,255,0.6);font-size:13px;">Category:</label>
-  <select id="cat-select"></select>
-  <a href="/bahasa/pronunciation" class="mode-btn" style="text-decoration:none"><i class="fa-solid fa-book-open"></i> Guide</a>
   <div class="spacer"></div>
-  <a href="/" class="mode-btn" style="text-decoration:none"><i class="fa-solid fa-house"></i></a>
-  <button id="stats-btn" onclick="openStats()"><i class="fa-solid fa-chart-bar"></i> Stats</button>
+  <button id="nav-toggle" onclick="toggleNav()" aria-label="Menu"><i class="fa-solid fa-bars"></i></button>
+  <div id="nav-menu">
+    <button class="mode-btn active" id="btn-id-en" onclick="setMode('id_en')">ID &#8594; EN</button>
+    <button class="mode-btn"        id="btn-en-id" onclick="setMode('en_id')">EN &#8594; ID</button>
+    <label>Category:</label>
+    <select id="cat-select"></select>
+    <a href="/bahasa/pronunciation" class="mode-btn" style="text-decoration:none"><i class="fa-solid fa-book-open"></i> Guide</a>
+    <div class="nav-sep"></div>
+    <a href="/" class="mode-btn" style="text-decoration:none"><i class="fa-solid fa-house"></i> Home</a>
+    <button id="stats-btn" onclick="openStats()"><i class="fa-solid fa-chart-bar"></i> Stats</button>
+  </div>
 </div>
 
 <div id="progstrip">
@@ -111,7 +115,6 @@
 
   <div id="bottom-bar">
     <button id="btn-start" onclick="startSession()"><i class="fa-solid fa-play"></i> Start Session</button>
-    <button id="btn-quit"  onclick="goHome()"><i class="fa-solid fa-house"></i> Home</button>
   </div>
 </div>
 
