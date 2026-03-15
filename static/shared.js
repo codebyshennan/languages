@@ -146,6 +146,101 @@ function callPronounce(text, lang) {
   speechSynthesis.speak(utt);
 }
 
+// ── TTS Widget ─────────────────────────────────────────────────────────────
+var _ttsRecent = [];     // last 5 spoken words (in-memory only)
+var _ttsOpen   = false;
+
+function _ttsDetectLang() {
+  var p = window.location.pathname;
+  if (p.indexOf('/viet')   !== -1) return 'vi-VN';
+  if (p.indexOf('/bahasa') !== -1) return 'id-ID';
+  if (p.indexOf('/spanish')!== -1) return 'es-ES';
+  return 'en-US';
+}
+
+function _ttsRenderChips() {
+  var el = document.getElementById('tts-chips');
+  if (!el) return;
+  el.innerHTML = _ttsRecent.map(function(w) {
+    return '<span class="tts-chip" data-word="' + w.replace(/"/g,'&quot;') + '">' + w + '</span>';
+  }).join('');
+  el.querySelectorAll('.tts-chip').forEach(function(chip) {
+    chip.addEventListener('click', function() {
+      var word = chip.getAttribute('data-word');
+      document.getElementById('tts-input').value = word;
+      _ttsSpeak(word);
+    });
+  });
+}
+
+function _ttsSpeak(text) {
+  if (!text || !text.trim()) return;
+  var clean = text.trim();
+  callPronounce(clean, _ttsDetectLang());
+  _ttsRecent = _ttsRecent.filter(function(w) { return w !== clean; });
+  _ttsRecent.unshift(clean);
+  if (_ttsRecent.length > 5) _ttsRecent.pop();
+  _ttsRenderChips();
+}
+
+function openTTSModal() {
+  var overlay = document.getElementById('tts-overlay');
+  if (!overlay) return;
+  var errEl = document.getElementById('tts-error');
+  if (errEl) errEl.style.display = window.speechSynthesis ? 'none' : 'block';
+  var badge = document.getElementById('tts-lang-badge');
+  if (badge) badge.textContent = _ttsDetectLang();
+  _ttsRenderChips();
+  overlay.classList.add('open');
+  var inp = document.getElementById('tts-input');
+  if (inp) { inp.value = ''; inp.focus(); }
+  _ttsOpen = true;
+}
+
+function closeTTSModal() {
+  var overlay = document.getElementById('tts-overlay');
+  if (overlay) overlay.classList.remove('open');
+  _ttsOpen = false;
+}
+
+function setupTTSWidget() {
+  // Inject modal HTML
+  var overlay = document.createElement('div');
+  overlay.id = 'tts-overlay';
+  overlay.innerHTML =
+    '<div id="tts-modal">' +
+      '<div id="tts-modal-header">' +
+        '<span id="tts-modal-title">🔊 Speak</span>' +
+        '<span id="tts-lang-badge"></span>' +
+      '</div>' +
+      '<input id="tts-input" type="text" placeholder="Type a word\u2026" autocomplete="off" />' +
+      '<div id="tts-hint">Enter to speak \u00b7 Esc to close</div>' +
+      '<div id="tts-error">Speech not supported in this browser</div>' +
+      '<div id="tts-chips"></div>' +
+    '</div>';
+  overlay.addEventListener('click', function(e) {
+    if (e.target === overlay) closeTTSModal();
+  });
+  document.body.appendChild(overlay);
+
+  // Input listeners
+  document.getElementById('tts-input').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') { _ttsSpeak(this.value); }
+    if (e.key === 'Escape') { e.stopPropagation(); closeTTSModal(); }
+  });
+
+  // Inject FAB (shown via CSS only on touch devices)
+  var fab = document.createElement('button');
+  fab.id = 'tts-fab';
+  fab.setAttribute('aria-label', 'Speak a word');
+  fab.innerHTML = '\uD83D\uDD0A';
+  fab.addEventListener('click', openTTSModal);
+  document.body.appendChild(fab);
+}
+
+window.openTTSModal  = openTTSModal;
+window.closeTTSModal = closeTTSModal;
+
 // ── Overview ───────────────────────────────────────────────────────────────
 function computeOverview() {
   var p = loadProgress();
@@ -481,6 +576,7 @@ function setupSwipe() {
 // ── Keyboard ───────────────────────────────────────────────────────────────
 document.addEventListener("keydown", function(e) {
   if (e.target.tagName === "SELECT") return;
+  if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") return;
   if (e.key === " " || e.key === "Spacebar") { e.preventDefault(); showAnswer(); }
   if (e.key === "1") rate(1);
   if (e.key === "2") rate(2);
@@ -490,6 +586,8 @@ document.addEventListener("keydown", function(e) {
   if (e.key === "Enter" && document.getElementById("welcome").style.display !== "none") startSession();
   if (e.key === "Escape") closeStats();
   if (cfg && cfg.handleExtraKeys) cfg.handleExtraKeys(e, curCard);
+  if (e.key === "/" && !_ttsOpen) { e.preventDefault(); openTTSModal(); }
+  if (e.key === "Escape" && _ttsOpen) { closeTTSModal(); }
 });
 
 // ── Init ───────────────────────────────────────────────────────────────────
@@ -529,5 +627,6 @@ window.closeStats   = closeStats;
 window.goHome       = goHome;
 window.toggleNav    = toggleNav;
 
+setupTTSWidget();
 init();
 })();
