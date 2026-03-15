@@ -210,10 +210,13 @@ function addChip(word, correct) {
   recentHistory.unshift({ word: word, correct: correct });
   if (recentHistory.length > 5) recentHistory.pop();
   var el = document.getElementById('recent-chips');
-  el.innerHTML = recentHistory.map(function(h) {
-    return '<span class="chip ' + (h.correct ? 'correct' : 'wrong') + '">' +
-           (h.correct ? '✓' : '✗') + ' ' + h.word + '</span>';
-  }).join('');
+  el.innerHTML = '';
+  recentHistory.forEach(function(h) {
+    var chip = document.createElement('span');
+    chip.className = 'chip ' + (h.correct ? 'correct' : 'wrong');
+    chip.textContent = (h.correct ? '✓' : '✗') + ' ' + h.word;
+    el.appendChild(chip);
+  });
 }
 
 // ── Queue ─────────────────────────────────────────────────────────────────
@@ -229,6 +232,7 @@ function buildQueue() {
 }
 
 function loadNextWord() {
+  if (!allCards.length) return;
   awaitingNext = false;
   document.getElementById('reveal-area').style.display  = 'none';
   document.getElementById('typing-input').value         = '';
