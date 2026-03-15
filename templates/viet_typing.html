@@ -343,16 +343,23 @@ document.getElementById('typing-input').addEventListener('input', function() {
 });
 
 document.addEventListener('keydown', function(e) {
-  if (e.key === 'Enter' && !awaitingNext) { submitAnswer(); }
+  var onInput = document.activeElement === document.getElementById('typing-input');
+  if (e.key === 'Enter' && onInput && !awaitingNext) { submitAnswer(); }
   if ((e.key === 'r' || e.key === 'R') && mode === 'dictation' && !awaitingNext) { replayAudio(); }
 });
 
 // ── Init ──────────────────────────────────────────────────────────────────
 async function init() {
-  var res  = await fetch('/api/vocab/viet');
-  allCards = await res.json();
-  initCatSelect();
-  queue = buildQueue();
+  try {
+    var res = await fetch('/api/vocab/viet');
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    allCards = await res.json();
+    initCatSelect();
+    queue = buildQueue();
+  } catch (err) {
+    document.getElementById('start-desc').innerHTML =
+      '<span style="color:#C0392B">Could not load vocabulary. Please refresh the page.</span>';
+  }
 }
 
 window.setMode      = setMode;
