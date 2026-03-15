@@ -87,6 +87,35 @@
     font-weight: 700; cursor: pointer;
   }
   #btn-start-typing:hover { background: var(--primary-dk); }
+  /* Keyboard helper */
+  #key-toggle {
+    background: none; border: 1px solid #ddd; border-radius: 20px;
+    padding: 4px 14px; font-size: 12px; color: #888; cursor: pointer;
+    display: block; margin: 0 auto 10px;
+  }
+  #key-toggle:hover { border-color: var(--primary); color: var(--primary); }
+  #key-panel {
+    display: none; background: #FAFAFA; border: 1px solid #E8E8E8;
+    border-radius: 10px; padding: 14px 16px; margin-bottom: 14px;
+    font-size: 12px;
+  }
+  #key-panel.open { display: block; }
+  .key-cols { display: flex; gap: 16px; }
+  .key-col { flex: 1; }
+  .key-col h4 { margin: 0 0 8px; font-size: 11px; text-transform: uppercase;
+                letter-spacing: 0.8px; color: var(--primary); }
+  .key-row { display: flex; justify-content: space-between;
+             padding: 2px 0; border-bottom: 1px solid #F0F0F0; }
+  .key-row:last-child { border-bottom: none; }
+  .key-char { font-weight: 700; color: #333; }
+  .key-combo { font-family: monospace; color: #666; background: #EEE;
+               padding: 0 4px; border-radius: 3px; }
+  .key-section-title { font-size: 10px; color: #aaa; text-transform: uppercase;
+                       letter-spacing: 0.6px; margin: 10px 0 6px; }
+  .tone-grid { display: grid; grid-template-columns: repeat(5,1fr); gap: 4px; }
+  .tone-cell { text-align: center; }
+  .tone-cell .key-char { display: block; font-size: 14px; }
+  .tone-cell .key-combo { display: block; margin-top: 2px; }
 </style>
 </head>
 <body>
@@ -133,6 +162,39 @@
   </div>
   <input id="typing-input" type="text" placeholder="Type here…" autocomplete="off" spellcheck="false" />
   <div id="submit-hint">Press Enter to submit</div>
+  <button id="key-toggle" onclick="toggleKeyHelper()">⌨ Key helper</button>
+  <div id="key-panel">
+    <div class="key-cols">
+      <div class="key-col">
+        <h4>Telex</h4>
+        <div class="key-row"><span class="key-char">ă</span><span class="key-combo">aw</span></div>
+        <div class="key-row"><span class="key-char">â</span><span class="key-combo">aa</span></div>
+        <div class="key-row"><span class="key-char">đ</span><span class="key-combo">dd</span></div>
+        <div class="key-row"><span class="key-char">ê</span><span class="key-combo">ee</span></div>
+        <div class="key-row"><span class="key-char">ô</span><span class="key-combo">oo</span></div>
+        <div class="key-row"><span class="key-char">ơ</span><span class="key-combo">ow</span></div>
+        <div class="key-row"><span class="key-char">ư</span><span class="key-combo">uw</span></div>
+      </div>
+      <div class="key-col">
+        <h4>VNI</h4>
+        <div class="key-row"><span class="key-char">ă</span><span class="key-combo">a8</span></div>
+        <div class="key-row"><span class="key-char">â</span><span class="key-combo">a6</span></div>
+        <div class="key-row"><span class="key-char">đ</span><span class="key-combo">d9</span></div>
+        <div class="key-row"><span class="key-char">ê</span><span class="key-combo">e6</span></div>
+        <div class="key-row"><span class="key-char">ô</span><span class="key-combo">o6</span></div>
+        <div class="key-row"><span class="key-char">ơ</span><span class="key-combo">o7</span></div>
+        <div class="key-row"><span class="key-char">ư</span><span class="key-combo">u7</span></div>
+      </div>
+    </div>
+    <div class="key-section-title">Tones — Telex: f s r x j &nbsp;|&nbsp; VNI: 2 1 3 4 5</div>
+    <div class="tone-grid">
+      <div class="tone-cell"><span class="key-char">à</span><span class="key-combo">f / 2</span></div>
+      <div class="tone-cell"><span class="key-char">á</span><span class="key-combo">s / 1</span></div>
+      <div class="tone-cell"><span class="key-char">ả</span><span class="key-combo">r / 3</span></div>
+      <div class="tone-cell"><span class="key-char">ã</span><span class="key-combo">x / 4</span></div>
+      <div class="tone-cell"><span class="key-char">ạ</span><span class="key-combo">j / 5</span></div>
+    </div>
+  </div>
   <div id="reveal-area">
     <div class="reveal-label">Correct answer:</div>
     <div id="reveal-word"></div>
@@ -168,6 +230,7 @@ var totalSubmitted = 0;
 var errorCount     = 0;
 var recentHistory  = [];          // [{word, correct}] last 5
 var awaitingNext   = false;       // locked while wrong-answer TTS plays
+var lastSubmitTime = 0;           // debounce guard against Enter key-repeat
 
 // ── TTS ───────────────────────────────────────────────────────────────────
 function speak(text, onEnd) {
@@ -234,10 +297,13 @@ function buildQueue() {
 function loadNextWord() {
   if (!allCards.length) return;
   awaitingNext = false;
-  document.getElementById('reveal-area').style.display  = 'none';
-  document.getElementById('typing-input').value         = '';
-  document.getElementById('typing-input').disabled      = false;
-  document.getElementById('typing-input').focus();
+  var inp = document.getElementById('typing-input');
+  document.getElementById('reveal-area').style.display = 'none';
+  inp.blur();
+  inp.disabled = false;
+  inp.focus();
+  // Defer the clear so any pending IME composition commit fires first
+  setTimeout(function() { inp.value = ''; }, 0);
 
   if (qpos >= queue.length) { queue = buildQueue(); qpos = 0; }
   curCard = queue[qpos++];
@@ -261,8 +327,11 @@ function submitAnswer() {
   // Empty-input guard first — ignore Enter on blank input in all states
   var typed = document.getElementById('typing-input').value.trim();
   if (!typed) return;
-  // Re-entry guard — locked while wrong-answer TTS plays
+  // Re-entry guard — locked while wrong-answer TTS plays, or within debounce window
   if (awaitingNext || !curCard) return;
+  var now = Date.now();
+  if (now - lastSubmitTime < 150) return;
+  lastSubmitTime = now;
 
   totalSubmitted++;
   totalChars += typed.length;
@@ -277,11 +346,23 @@ function submitAnswer() {
     errorCount++;
     addChip(curCard.viet, false);
     updateStats();
-    document.getElementById('reveal-word').textContent       = curCard.viet;
-    document.getElementById('reveal-area').style.display     = 'block';
-    document.getElementById('typing-input').disabled         = true;
+    document.getElementById('typing-input').disabled = true;
     awaitingNext = true;
-    speak(curCard.viet, function() { loadNextWord(); });
+    if (mode === 'copy') {
+      // Word is already visible in word-display — no need to repeat it.
+      // Just pause so the user registers the mistake before moving on.
+      setTimeout(function() { loadNextWord(); }, 1200);
+    } else {
+      // Dictation: reveal the word and speak it.
+      // Hold the reveal for at least 1500ms even if TTS fires onend/onerror quickly.
+      document.getElementById('reveal-word').textContent   = curCard.viet;
+      document.getElementById('reveal-area').style.display = 'block';
+      var shownAt = Date.now();
+      speak(curCard.viet, function() {
+        var elapsed = Date.now() - shownAt;
+        setTimeout(loadNextWord, Math.max(0, 1500 - elapsed));
+      });
+    }
   }
 }
 
@@ -362,10 +443,18 @@ async function init() {
   }
 }
 
-window.setMode      = setMode;
-window.startSession = startSession;
-window.replayAudio  = replayAudio;
-window.toggleNav    = toggleNav;
+function toggleKeyHelper() {
+  var panel = document.getElementById('key-panel');
+  panel.classList.toggle('open');
+  document.getElementById('key-toggle').textContent =
+    panel.classList.contains('open') ? '✕ Key helper' : '⌨ Key helper';
+}
+
+window.setMode         = setMode;
+window.startSession    = startSession;
+window.replayAudio     = replayAudio;
+window.toggleNav       = toggleNav;
+window.toggleKeyHelper = toggleKeyHelper;
 
 init();
 })();
