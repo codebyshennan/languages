@@ -158,6 +158,10 @@ def spanish():
 def viet_pronunciation():
     return render_template("viet_pronunciation.html")
 
+@app.route("/viet/typing")
+def viet_typing():
+    return render_template("viet_typing.html")
+
 @app.route("/spanish/pronunciation")
 def spanish_pronunciation():
     return render_template("spanish_pronunciation.html")
