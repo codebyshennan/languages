@@ -1,1 +1,363 @@
-<!DOCTYPE html><html><body>placeholder</body></html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Viet Typing — Speed Practice</title>
+<link rel="stylesheet" href="/static/shared.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<style>
+  :root {
+    --primary:    #8B0000;
+    --primary-dk: #6B0000;
+    --accent:     #CC2233;
+    --accent2:    #F4C430;
+    --lgrey:      #F0F4F8;
+    --dgrey:      #6C7A8A;
+  }
+  /* Stats bar */
+  #stats-bar {
+    display: flex; background: #fff;
+    border-bottom: 1px solid #E0E0E0;
+  }
+  .stat-cell {
+    flex: 1; text-align: center; padding: 10px 4px;
+    border-right: 1px solid #E0E0E0;
+  }
+  .stat-cell:last-child { border-right: none; }
+  .stat-num { font-size: 22px; font-weight: 700; color: var(--primary); }
+  .stat-num.good { color: #27AE60; }
+  .stat-num.bad  { color: #C0392B; }
+  .stat-lbl { font-size: 10px; color: #888; text-transform: uppercase; letter-spacing: 0.5px; }
+  /* Card area */
+  #card-area { max-width: 480px; margin: 28px auto; padding: 0 16px; }
+  #mode-label { text-align:center; font-size:11px; color:#aaa; text-transform:uppercase; letter-spacing:1px; margin-bottom:12px; }
+  #word-display { text-align:center; font-size:42px; font-weight:700; color:var(--primary); margin-bottom:6px; min-height:52px; }
+  #hint-display { text-align:center; font-size:14px; color:#888; margin-bottom:22px; min-height:20px; }
+  /* Dictation speaker */
+  #dictation-btn {
+    display: none; flex-direction: column; align-items: center;
+    gap: 10px; margin: 0 auto 22px; cursor: pointer; width: fit-content;
+  }
+  .speaker-circle {
+    width: 72px; height: 72px; border-radius: 50%;
+    background: var(--primary); color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 28px; box-shadow: 0 4px 16px rgba(139,0,0,0.3);
+    transition: transform 0.1s;
+  }
+  .speaker-circle:active { transform: scale(0.95); }
+  #replay-hint { font-size: 11px; color: #aaa; }
+  /* Input */
+  #typing-input {
+    width: 100%; padding: 12px 16px; font-size: 20px;
+    border: 2px solid var(--primary); border-radius: 8px;
+    text-align: center; outline: none; background: #fff;
+    margin-bottom: 8px;
+  }
+  #typing-input:focus { box-shadow: 0 0 0 3px rgba(139,0,0,0.12); }
+  #typing-input:disabled { opacity: 0.5; }
+  #submit-hint { text-align:center; font-size:11px; color:#aaa; margin-bottom:14px; }
+  /* Reveal (wrong answer) */
+  #reveal-area {
+    display: none; text-align: center; padding: 12px;
+    background: #FFF0F0; border-radius: 8px; margin-bottom: 14px;
+  }
+  #reveal-area .reveal-label { font-size: 12px; color: #888; margin-bottom: 4px; }
+  #reveal-word { font-size: 24px; font-weight: 700; color: var(--primary); }
+  /* Recent chips */
+  #recent-chips { display:flex; gap:6px; flex-wrap:wrap; justify-content:center; margin-top:8px; }
+  .chip { padding: 3px 12px; border-radius: 20px; font-size: 13px; }
+  .chip.correct { background: #E8F5E9; color: #2E7D32; }
+  .chip.wrong   { background: #FDECEA; color: #C0392B; }
+  /* Start overlay */
+  #start-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+    display: flex; align-items: center; justify-content: center; z-index: 100;
+  }
+  #start-card {
+    background: #fff; border-radius: 12px; padding: 32px 28px;
+    text-align: center; max-width: 340px; width: 90%;
+  }
+  #start-card h2 { color: var(--primary); margin-bottom: 10px; font-size: 22px; }
+  #start-card p  { color: #666; font-size: 14px; margin-bottom: 22px; line-height: 1.5; }
+  #btn-start-typing {
+    background: var(--primary); color: #fff; border: none;
+    padding: 12px 36px; border-radius: 8px; font-size: 16px;
+    font-weight: 700; cursor: pointer;
+  }
+  #btn-start-typing:hover { background: var(--primary-dk); }
+</style>
+</head>
+<body>
+
+<div id="topbar">
+  <h1>VIET TYPING</h1>
+  <div class="spacer"></div>
+  <button id="nav-toggle" onclick="toggleNav()" aria-label="Menu"><i class="fa-solid fa-bars"></i></button>
+  <div id="nav-menu">
+    <button class="mode-btn active" id="btn-copy"     onclick="setMode('copy')"><i class="fa-solid fa-eye"></i> Copy</button>
+    <button class="mode-btn"        id="btn-dictation" onclick="setMode('dictation')"><i class="fa-solid fa-headphones"></i> Dictation</button>
+    <label>Category:</label>
+    <select id="cat-select"></select>
+    <a href="/viet" class="mode-btn" style="text-decoration:none"><i class="fa-solid fa-arrow-left"></i> Back</a>
+  </div>
+</div>
+
+<div id="stats-bar">
+  <div class="stat-cell">
+    <div class="stat-num" id="stat-wpm">0</div>
+    <div class="stat-lbl">WPM</div>
+  </div>
+  <div class="stat-cell">
+    <div class="stat-num good" id="stat-acc">—</div>
+    <div class="stat-lbl">Accuracy</div>
+  </div>
+  <div class="stat-cell">
+    <div class="stat-num" id="stat-words">0</div>
+    <div class="stat-lbl">Words</div>
+  </div>
+  <div class="stat-cell">
+    <div class="stat-num bad" id="stat-errors">0</div>
+    <div class="stat-lbl">Errors</div>
+  </div>
+</div>
+
+<div id="card-area">
+  <div id="mode-label"></div>
+  <div id="word-display"></div>
+  <div id="hint-display"></div>
+  <div id="dictation-btn" onclick="replayAudio()">
+    <div class="speaker-circle"><i class="fa-solid fa-volume-high"></i></div>
+    <div id="replay-hint">Press R to replay</div>
+  </div>
+  <input id="typing-input" type="text" placeholder="Type here…" autocomplete="off" spellcheck="false" />
+  <div id="submit-hint">Press Enter to submit</div>
+  <div id="reveal-area">
+    <div class="reveal-label">Correct answer:</div>
+    <div id="reveal-word"></div>
+  </div>
+  <div id="recent-chips"></div>
+</div>
+
+<div id="start-overlay">
+  <div id="start-card">
+    <h2>Viet Typing</h2>
+    <p id="start-desc">Choose a mode above, then press Start.<br><br>
+      <strong>Copy:</strong> see the Vietnamese word, type it.<br>
+      <strong>Dictation:</strong> hear the word, type it blind.
+    </p>
+    <button id="btn-start-typing" onclick="startSession()">Start</button>
+  </div>
+</div>
+
+<script>
+(function () {
+'use strict';
+
+// ── State ─────────────────────────────────────────────────────────────────
+var allCards       = [];
+var queue          = [];
+var qpos           = 0;
+var curCard        = null;
+var mode           = 'copy';      // 'copy' | 'dictation'
+var timerStart     = null;        // set on first input event
+var totalChars     = 0;           // chars entered in correct + wrong answers
+var correctCount   = 0;
+var totalSubmitted = 0;
+var errorCount     = 0;
+var recentHistory  = [];          // [{word, correct}] last 5
+var awaitingNext   = false;       // locked while wrong-answer TTS plays
+
+// ── TTS ───────────────────────────────────────────────────────────────────
+function speak(text, onEnd) {
+  if (!window.speechSynthesis) { if (onEnd) setTimeout(onEnd, 100); return; }
+  speechSynthesis.cancel();
+  var clean = text.split('(')[0].replace(/['"\/]/g, '').trim();
+  var utt = new SpeechSynthesisUtterance(clean);
+  utt.lang = 'vi-VN';
+  if (onEnd) {
+    var called = false;
+    function done() { if (!called) { called = true; onEnd(); } }
+    utt.onend  = done;
+    utt.onerror = done;
+    // Fallback: 3s baseline + 80ms per character
+    setTimeout(done, 3000 + clean.length * 80);
+  }
+  speechSynthesis.speak(utt);
+}
+
+function replayAudio() {
+  if (curCard && mode === 'dictation' && !awaitingNext) speak(curCard.viet);
+}
+
+// ── Stats ─────────────────────────────────────────────────────────────────
+function updateStats() {
+  var wpm = 0;
+  if (timerStart && totalChars > 0) {
+    var mins = (Date.now() - timerStart) / 60000;
+    if (mins > 0) wpm = Math.round((totalChars / 5) / mins);
+  }
+  var acc = totalSubmitted > 0 ? Math.round(100 * correctCount / totalSubmitted) : null;
+  document.getElementById('stat-wpm').textContent   = wpm;
+  document.getElementById('stat-acc').textContent   = acc !== null ? acc + '%' : '—';
+  document.getElementById('stat-words').textContent = totalSubmitted;
+  document.getElementById('stat-errors').textContent = errorCount;
+}
+
+// ── Recent chips ──────────────────────────────────────────────────────────
+function addChip(word, correct) {
+  recentHistory.unshift({ word: word, correct: correct });
+  if (recentHistory.length > 5) recentHistory.pop();
+  var el = document.getElementById('recent-chips');
+  el.innerHTML = recentHistory.map(function(h) {
+    return '<span class="chip ' + (h.correct ? 'correct' : 'wrong') + '">' +
+           (h.correct ? '✓' : '✗') + ' ' + h.word + '</span>';
+  }).join('');
+}
+
+// ── Queue ─────────────────────────────────────────────────────────────────
+function buildQueue() {
+  var cat  = document.getElementById('cat-select').value;
+  var src  = (cat === 'All') ? allCards : allCards.filter(function(c) { return c.cat === cat; });
+  var arr  = src.slice();
+  for (var i = arr.length - 1; i > 0; i--) {
+    var j = Math.floor(Math.random() * (i + 1));
+    var tmp = arr[i]; arr[i] = arr[j]; arr[j] = tmp;
+  }
+  return arr;
+}
+
+function loadNextWord() {
+  awaitingNext = false;
+  document.getElementById('reveal-area').style.display  = 'none';
+  document.getElementById('typing-input').value         = '';
+  document.getElementById('typing-input').disabled      = false;
+  document.getElementById('typing-input').focus();
+
+  if (qpos >= queue.length) { queue = buildQueue(); qpos = 0; }
+  curCard = queue[qpos++];
+
+  if (mode === 'copy') {
+    document.getElementById('mode-label').textContent    = 'Type this word';
+    document.getElementById('word-display').textContent  = curCard.viet;
+    document.getElementById('hint-display').textContent  = curCard.english;
+    document.getElementById('dictation-btn').style.display = 'none';
+  } else {
+    document.getElementById('mode-label').textContent    = 'Listen and type';
+    document.getElementById('word-display').textContent  = '';
+    document.getElementById('hint-display').textContent  = '';
+    document.getElementById('dictation-btn').style.display = 'flex';
+    speak(curCard.viet);
+  }
+}
+
+// ── Submit ────────────────────────────────────────────────────────────────
+function submitAnswer() {
+  // Empty-input guard first — ignore Enter on blank input in all states
+  var typed = document.getElementById('typing-input').value.trim();
+  if (!typed) return;
+  // Re-entry guard — locked while wrong-answer TTS plays
+  if (awaitingNext || !curCard) return;
+
+  totalSubmitted++;
+  totalChars += typed.length;
+  var correct = (typed.toLowerCase() === curCard.viet.toLowerCase());
+
+  if (correct) {
+    correctCount++;
+    addChip(curCard.viet, true);
+    updateStats();
+    loadNextWord();
+  } else {
+    errorCount++;
+    addChip(curCard.viet, false);
+    updateStats();
+    document.getElementById('reveal-word').textContent       = curCard.viet;
+    document.getElementById('reveal-area').style.display     = 'block';
+    document.getElementById('typing-input').disabled         = true;
+    awaitingNext = true;
+    speak(curCard.viet, function() { loadNextWord(); });
+  }
+}
+
+// ── Mode ──────────────────────────────────────────────────────────────────
+function setMode(m) {
+  mode = m;
+  document.getElementById('btn-copy').classList.toggle('active',      m === 'copy');
+  document.getElementById('btn-dictation').classList.toggle('active', m === 'dictation');
+  resetSession();
+  loadNextWord();
+}
+
+function resetSession() {
+  timerStart = null; totalChars = 0; correctCount = 0;
+  totalSubmitted = 0; errorCount = 0; recentHistory = [];
+  document.getElementById('recent-chips').innerHTML = '';
+  queue = buildQueue(); qpos = 0;
+  updateStats();
+}
+
+// ── Category ──────────────────────────────────────────────────────────────
+function initCatSelect() {
+  var seen = {}, cats = [];
+  for (var i = 0; i < allCards.length; i++) {
+    var c = allCards[i].cat || 'General';
+    if (!seen[c]) { seen[c] = true; cats.push(c); }
+  }
+  cats.sort();
+  var sel = document.getElementById('cat-select');
+  sel.innerHTML = '<option value="All">All categories</option>' +
+    cats.map(function(c) { return '<option>' + c + '</option>'; }).join('');
+  sel.addEventListener('change', function() { resetSession(); loadNextWord(); });
+}
+
+// ── Session start ─────────────────────────────────────────────────────────
+function startSession() {
+  document.getElementById('start-overlay').style.display = 'none';
+  loadNextWord();
+}
+
+// ── Nav toggle (reuse shared pattern) ─────────────────────────────────────
+function toggleNav() {
+  var menu = document.getElementById('nav-menu');
+  if (menu) menu.classList.toggle('open');
+}
+document.addEventListener('click', function(e) {
+  var menu   = document.getElementById('nav-menu');
+  var toggle = document.getElementById('nav-toggle');
+  if (!menu || !menu.classList.contains('open')) return;
+  if (!menu.contains(e.target) && e.target !== toggle && !toggle.contains(e.target)) {
+    menu.classList.remove('open');
+  }
+});
+
+// ── Keyboard ──────────────────────────────────────────────────────────────
+document.getElementById('typing-input').addEventListener('input', function() {
+  // Start WPM timer on first character typed
+  if (!timerStart) timerStart = Date.now();
+});
+
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Enter' && !awaitingNext) { submitAnswer(); }
+  if ((e.key === 'r' || e.key === 'R') && mode === 'dictation' && !awaitingNext) { replayAudio(); }
+});
+
+// ── Init ──────────────────────────────────────────────────────────────────
+async function init() {
+  var res  = await fetch('/api/vocab/viet');
+  allCards = await res.json();
+  initCatSelect();
+  queue = buildQueue();
+}
+
+window.setMode      = setMode;
+window.startSession = startSession;
+window.replayAudio  = replayAudio;
+window.toggleNav    = toggleNav;
+
+init();
+})();
+</script>
+</body>
+</html>
