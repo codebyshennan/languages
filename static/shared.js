@@ -161,15 +161,16 @@ function _ttsDetectLang() {
 function _ttsRenderChips() {
   var el = document.getElementById('tts-chips');
   if (!el) return;
-  el.innerHTML = _ttsRecent.map(function(w) {
-    return '<span class="tts-chip" data-word="' + w.replace(/"/g,'&quot;') + '">' + w + '</span>';
-  }).join('');
-  el.querySelectorAll('.tts-chip').forEach(function(chip) {
+  el.innerHTML = '';
+  _ttsRecent.forEach(function(w) {
+    var chip = document.createElement('span');
+    chip.className = 'tts-chip';
+    chip.textContent = w;
     chip.addEventListener('click', function() {
-      var word = chip.getAttribute('data-word');
-      document.getElementById('tts-input').value = word;
-      _ttsSpeak(word);
+      document.getElementById('tts-input').value = w;
+      _ttsSpeak(w);
     });
+    el.appendChild(chip);
   });
 }
 
