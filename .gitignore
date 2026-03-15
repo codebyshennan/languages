@@ -9,4 +9,4 @@ spanish/vocab_*.json
 spanish/enriched_*.json
 vietnamese/generate_progress.json
 .env
-.claude
+.claude.superpowers/
