@@ -1,0 +1,4 @@
+{"type":"server-started","port":58197,"host":"127.0.0.1","url_host":"localhost","url":"http://localhost:58197","screen_dir":"/Users/wongshennan/Documents/personal/languages/.superpowers/brainstorm/57047-1773555051"}
+{"type":"screen-added","file":"/Users/wongshennan/Documents/personal/languages/.superpowers/brainstorm/57047-1773555051/tts-widget.html"}
+{"type":"screen-added","file":"/Users/wongshennan/Documents/personal/languages/.superpowers/brainstorm/57047-1773555051/typing-trainer.html"}
+{"type":"server-stopped","reason":"idle timeout"}

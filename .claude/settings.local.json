@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python3 app.py)",
+      "Bash(lsof -ti:5000)",
+      "Bash(ps -p 1093 -p 41002 -o pid,comm,args)",
+      "Bash(FLASK_RUN_PORT=5001 python3 app.py)",
+      "Bash(python3 /Users/wongshennan/Documents/personal/languages/app.py)",
+      "Bash(lsof -ti:5001 | xargs kill -9 2>/dev/null; sleep 1 && python3 app.py)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(gh auth:*)"
+    ]
+  }
+}
