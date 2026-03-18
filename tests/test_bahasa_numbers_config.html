@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Indonesian numberToWords Tests</title>
+</head>
+<body>
+<pre id="out"></pre>
+<script src="../static/bahasa_numbers_config.js"></script>
+<script>
+  var toWords = window.NUMBER_CONFIG.numberToWords;
+  var results = [];
+  var passed = 0, failed = 0;
+
+  function assert(label, got, expected) {
+    var ok = got === expected;
+    if (ok) { passed++; } else { failed++; }
+    results.push((ok ? 'PASS' : 'FAIL') + '  ' + label +
+      (ok ? '' : '\n    got:      "' + got + '"\n    expected: "' + expected + '"'));
+  }
+
+  assert('0', toWords(0), 'nol');
+  assert('1', toWords(1), 'satu');
+  assert('5', toWords(5), 'lima');
+  assert('10', toWords(10), 'sepuluh');
+  assert('11', toWords(11), 'sebelas');
+  assert('12', toWords(12), 'dua belas');
+  assert('19', toWords(19), 'sembilan belas');
+  assert('20', toWords(20), 'dua puluh');
+  assert('21', toWords(21), 'dua puluh satu');
+  assert('99', toWords(99), 'sembilan puluh sembilan');
+  assert('100', toWords(100), 'seratus');
+  assert('101', toWords(101), 'seratus satu');
+  assert('111', toWords(111), 'seratus sebelas');
+  assert('200', toWords(200), 'dua ratus');
+  assert('342', toWords(342), 'tiga ratus empat puluh dua');
+  assert('999', toWords(999), 'sembilan ratus sembilan puluh sembilan');
+  assert('1000', toWords(1000), 'seribu');
+  assert('1001', toWords(1001), 'seribu satu');
+  assert('1100', toWords(1100), 'seribu seratus');
+  assert('2500', toWords(2500), 'dua ribu lima ratus');
+  assert('10000', toWords(10000), 'sepuluh ribu');
+  assert('12345', toWords(12345), 'dua belas ribu tiga ratus empat puluh lima');
+  assert('100000', toWords(100000), 'seratus ribu');
+  assert('1000000', toWords(1000000), 'satu juta');
+
+  var out = document.getElementById('out');
+  out.textContent = results.join('\n') + '\n\n' + passed + ' passed, ' + failed + ' failed';
+  if (failed > 0) out.style.color = 'red';
+  else out.style.color = 'green';
+</script>
+</body>
+</html>
