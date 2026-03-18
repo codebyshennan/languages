@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Vietnamese numberToWords Tests</title>
+</head>
+<body>
+<pre id="out"></pre>
+<script src="../static/viet_numbers_config.js"></script>
+<script>
+  var toWords = window.NUMBER_CONFIG.numberToWords;
+  var results = [];
+  var passed = 0, failed = 0;
+
+  function assert(label, got, expected) {
+    var ok = got === expected;
+    if (ok) { passed++; } else { failed++; }
+    results.push((ok ? 'PASS' : 'FAIL') + '  ' + label +
+      (ok ? '' : '\n    got:      "' + got + '"\n    expected: "' + expected + '"'));
+  }
+
+  // Basic digits
+  assert('1', toWords(1), 'một');
+  assert('5', toWords(5), 'năm');
+  assert('10', toWords(10), 'mười');
+
+  // Teens
+  assert('11', toWords(11), 'mười một');
+  assert('14', toWords(14), 'mười bốn');
+  assert('15', toWords(15), 'mười lăm');
+
+  // Tens
+  assert('20', toWords(20), 'hai mươi');
+  assert('21', toWords(21), 'hai mươi mốt');
+  assert('24', toWords(24), 'hai mươi tư');
+  assert('25', toWords(25), 'hai mươi lăm');
+  assert('30', toWords(30), 'ba mươi');
+  assert('55', toWords(55), 'năm mươi lăm');
+  assert('99', toWords(99), 'chín mươi chín');
+
+  // Hundreds
+  assert('100', toWords(100), 'một trăm');
+  assert('101', toWords(101), 'một trăm lẻ một');
+  assert('105', toWords(105), 'một trăm lẻ năm');
+  assert('110', toWords(110), 'một trăm mười');
+  assert('111', toWords(111), 'một trăm mười một');
+  assert('115', toWords(115), 'một trăm mười lăm');
+  assert('121', toWords(121), 'một trăm hai mươi mốt');
+  assert('200', toWords(200), 'hai trăm');
+  assert('342', toWords(342), 'ba trăm bốn mươi hai');
+  assert('500', toWords(500), 'năm trăm');
+  assert('999', toWords(999), 'chín trăm chín mươi chín');
+
+  // Thousands
+  assert('1000', toWords(1000), 'một nghìn');
+  assert('1001', toWords(1001), 'một nghìn không trăm lẻ một');
+  assert('1010', toWords(1010), 'một nghìn không trăm mười');
+  assert('1100', toWords(1100), 'một nghìn một trăm');
+  assert('2500', toWords(2500), 'hai nghìn năm trăm');
+  assert('10000', toWords(10000), 'mười nghìn');
+  assert('12345', toWords(12345), 'mười hai nghìn ba trăm bốn mươi lăm');
+
+  // Thousands gap edge cases
+  assert('1005', toWords(1005), 'một nghìn không trăm lẻ năm');
+  assert('2003', toWords(2003), 'hai nghìn không trăm lẻ ba');
+  assert('1050', toWords(1050), 'một nghìn không trăm năm mươi');
+  assert('10001', toWords(10001), 'mười nghìn không trăm lẻ một');
+
+  // Large
+  assert('100000', toWords(100000), 'một trăm nghìn');
+  assert('1000000', toWords(1000000), 'một triệu');
+
+  var out = document.getElementById('out');
+  out.textContent = results.join('\n') + '\n\n' + passed + ' passed, ' + failed + ' failed';
+  if (failed > 0) out.style.color = 'red';
+  else out.style.color = 'green';
+</script>
+</body>
+</html>
