@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Spanish numberToWords Tests</title>
+</head>
+<body>
+<pre id="out"></pre>
+<script src="../static/spanish_numbers_config.js"></script>
+<script>
+  var toWords = window.NUMBER_CONFIG.numberToWords;
+  var results = [];
+  var passed = 0, failed = 0;
+
+  function assert(label, got, expected) {
+    var ok = got === expected;
+    if (ok) { passed++; } else { failed++; }
+    results.push((ok ? 'PASS' : 'FAIL') + '  ' + label +
+      (ok ? '' : '\n    got:      "' + got + '"\n    expected: "' + expected + '"'));
+  }
+
+  assert('0', toWords(0), 'cero');
+  assert('1', toWords(1), 'uno');
+  assert('10', toWords(10), 'diez');
+  assert('11', toWords(11), 'once');
+  assert('15', toWords(15), 'quince');
+  assert('16', toWords(16), 'diecis\u00e9is');
+  assert('19', toWords(19), 'diecinueve');
+  assert('20', toWords(20), 'veinte');
+  assert('21', toWords(21), 'veintiuno');
+  assert('22', toWords(22), 'veintid\u00f3s');
+  assert('23', toWords(23), 'veintitr\u00e9s');
+  assert('29', toWords(29), 'veintinueve');
+  assert('30', toWords(30), 'treinta');
+  assert('31', toWords(31), 'treinta y uno');
+  assert('42', toWords(42), 'cuarenta y dos');
+  assert('55', toWords(55), 'cincuenta y cinco');
+  assert('99', toWords(99), 'noventa y nueve');
+  assert('100', toWords(100), 'cien');
+  assert('101', toWords(101), 'ciento uno');
+  assert('200', toWords(200), 'doscientos');
+  assert('300', toWords(300), 'trescientos');
+  assert('342', toWords(342), 'trescientos cuarenta y dos');
+  assert('500', toWords(500), 'quinientos');
+  assert('700', toWords(700), 'setecientos');
+  assert('900', toWords(900), 'novecientos');
+  assert('999', toWords(999), 'novecientos noventa y nueve');
+  assert('1000', toWords(1000), 'mil');
+  assert('1001', toWords(1001), 'mil uno');
+  assert('1100', toWords(1100), 'mil cien');
+  assert('2000', toWords(2000), 'dos mil');
+  assert('2500', toWords(2500), 'dos mil quinientos');
+  assert('10000', toWords(10000), 'diez mil');
+  assert('12345', toWords(12345), 'doce mil trescientos cuarenta y cinco');
+  assert('100000', toWords(100000), 'cien mil');
+  assert('999999', toWords(999999), 'novecientos noventa y nueve mil novecientos noventa y nueve');
+  assert('1000000', toWords(1000000), 'un mill\u00f3n');
+
+  var out = document.getElementById('out');
+  out.textContent = results.join('\n') + '\n\n' + passed + ' passed, ' + failed + ' failed';
+  if (failed > 0) out.style.color = 'red';
+  else out.style.color = 'green';
+</script>
+</body>
+</html>
