@@ -1,5 +1,135 @@
 <!DOCTYPE html>
 <html lang="en">
-<head><meta charset="UTF-8"><title>Viet Numbers</title></head>
-<body><h1>Viet Numbers</h1></body>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Viet Numbers — Pronunciation Practice</title>
+<link rel="stylesheet" href="/static/shared.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<style>
+  :root {
+    --primary:    #8B0000;
+    --primary-dk: #6B0000;
+    --accent:     #CC2233;
+    --accent2:    #F4C430;
+    --lgrey:      #F0F4F8;
+    --dgrey:      #6C7A8A;
+  }
+  #main-area { display: none; max-width: 480px; margin: 0 auto; padding: 24px 16px; text-align: center; }
+  #number-display { font-size: 56px; font-weight: 700; color: var(--primary); margin: 32px 0 16px; min-height: 70px; }
+  #countdown-wrap { width: 100%; height: 6px; background: #E0E0E0; border-radius: 3px; margin-bottom: 24px; overflow: hidden; }
+  #countdown-bar { height: 100%; background: var(--accent); border-radius: 3px; width: 0%; }
+  #recording-indicator {
+    display: none; align-items: center; justify-content: center; gap: 8px;
+    font-size: 14px; color: #C0392B; margin-bottom: 16px;
+  }
+  #recording-indicator .dot {
+    width: 12px; height: 12px; border-radius: 50%; background: #C0392B;
+    animation: pulse 1s infinite;
+  }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+  #answer-reveal {
+    display: none; background: #FFF8F0; border: 1px solid #F0E0C0;
+    border-radius: 8px; padding: 16px; margin: 16px 0;
+  }
+  #answer-reveal .label { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+  #answer-text { font-size: 22px; font-weight: 600; color: var(--primary); }
+  .action-btn {
+    border: none; border-radius: 8px; padding: 12px 28px; font-size: 16px;
+    font-weight: 700; cursor: pointer; margin: 6px;
+  }
+  #record-btn { display: none; background: var(--primary); color: #fff; }
+  #record-btn:hover { background: var(--primary-dk); }
+  #stop-btn { display: none; background: #C0392B; color: #fff; }
+  #replay-btn { display: none; background: #fff; color: var(--primary); border: 2px solid var(--primary); padding: 8px 20px; font-size: 13px; margin-top: 8px; }
+  #btn-got-it { display: none; background: #27AE60; color: #fff; }
+  #btn-missed { display: none; background: #C0392B; color: #fff; }
+  #btn-skip { display: none; background: #E0E0E0; color: #555; font-size: 13px; padding: 8px 20px; }
+  #tip-card {
+    display: none; background: #FFFDE7; border: 1px solid #FFF176; border-radius: 8px;
+    padding: 14px 16px; margin-bottom: 20px; text-align: left; position: relative;
+  }
+  #tip-card .tip-title { font-size: 12px; font-weight: 700; color: #F9A825; text-transform: uppercase; margin-bottom: 6px; }
+  #tip-text { font-size: 14px; color: #333; line-height: 1.5; }
+  #tip-dismiss { position: absolute; top: 8px; right: 10px; background: none; border: none; font-size: 16px; color: #999; cursor: pointer; }
+  #num-strip { background: var(--primary-dk); padding: 6px 20px; display: flex; align-items: center; gap: 14px; color: rgba(255,255,255,0.7); font-size: 12px; }
+  #num-strip .val { color: #FFD700; font-weight: 700; }
+  #session-end { display: none; max-width: 400px; margin: 60px auto; padding: 32px; background: #fff; border-radius: 12px; text-align: center; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
+  #session-end h2 { color: var(--primary); margin-bottom: 20px; }
+  .end-stat { margin: 8px 0; font-size: 16px; color: #444; }
+  .end-stat .val { font-weight: 700; color: var(--primary); }
+  #start-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+    display: flex; align-items: center; justify-content: center; z-index: 100;
+  }
+  #start-card { background: #fff; border-radius: 12px; padding: 32px 28px; text-align: center; max-width: 360px; width: 90%; }
+  #start-card h2 { color: var(--primary); margin-bottom: 10px; }
+  #start-card p { color: #666; font-size: 14px; margin-bottom: 20px; line-height: 1.5; }
+  #btn-start { background: var(--primary); color: #fff; border: none; padding: 12px 36px; border-radius: 8px; font-size: 16px; font-weight: 700; cursor: pointer; }
+  #btn-start:hover { background: var(--primary-dk); }
+  audio { display: none; }
+</style>
+</head>
+<body>
+
+<div id="topbar">
+  <h1>VIET NUMBERS</h1>
+  <div class="spacer"></div>
+  <button id="tip-btn" style="background:transparent;border:2px solid rgba(255,255,255,0.3);color:rgba(255,255,255,0.6);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:13px;font-weight:600;">? Tip</button>
+  <span id="level-badge" style="color:rgba(255,255,255,0.7);font-size:13px;"></span>
+  <a href="/viet" class="mode-btn" style="text-decoration:none"><i class="fa-solid fa-arrow-left"></i> Back</a>
+</div>
+
+<div id="num-strip">
+  <span>Streak: <span class="val" id="num-streak">0</span></span>
+  <span>Level: <span class="val" id="num-level">1</span></span>
+  <span id="num-progress">0/5 to Level 2</span>
+</div>
+
+<div id="main-area">
+  <div id="tip-card">
+    <div class="tip-title"><i class="fa-solid fa-lightbulb"></i> Tip</div>
+    <div id="tip-text"></div>
+    <button id="tip-dismiss">&times;</button>
+  </div>
+  <div id="number-display"></div>
+  <div id="countdown-wrap"><div id="countdown-bar"></div></div>
+  <button class="action-btn" id="record-btn"><i class="fa-solid fa-microphone"></i> Record</button>
+  <button class="action-btn" id="stop-btn"><i class="fa-solid fa-stop"></i> Stop</button>
+  <div id="recording-indicator" aria-live="polite"><div class="dot"></div> Recording&hellip;</div>
+  <button class="action-btn" id="replay-btn"><i class="fa-solid fa-play"></i> Replay</button>
+  <audio id="playback-audio"></audio>
+  <div id="answer-reveal">
+    <div class="label">Answer</div>
+    <div id="answer-text"></div>
+  </div>
+  <div>
+    <button class="action-btn" id="btn-got-it"><i class="fa-solid fa-check"></i> Got it</button>
+    <button class="action-btn" id="btn-missed"><i class="fa-solid fa-xmark"></i> Missed it</button>
+  </div>
+  <button class="action-btn" id="btn-skip">Skip</button>
+</div>
+
+<div id="session-end">
+  <h2>Session Complete</h2>
+  <div class="end-stat">Rounds: <span class="val" id="end-attempts">0</span></div>
+  <div class="end-stat">Correct: <span class="val" id="end-correct">0</span></div>
+  <div class="end-stat">Accuracy: <span class="val" id="end-accuracy">&mdash;</span></div>
+  <div class="end-stat">Best Level: <span class="val" id="end-level">1</span></div>
+  <br>
+  <button class="action-btn" id="btn-retry" style="background:var(--primary);color:#fff;">Try Again</button>
+  <a href="/viet" class="action-btn" id="btn-home" style="background:#E0E0E0;color:#555;text-decoration:none;display:inline-block;">Home</a>
+</div>
+
+<div id="start-overlay">
+  <div id="start-card">
+    <h2>Viet Numbers</h2>
+    <p>A number will appear. You have a few seconds to read it, then record yourself saying it. Play back and self-assess.</p>
+    <button id="btn-start">Start</button>
+  </div>
+</div>
+
+<script src="/static/viet_numbers_config.js"></script>
+<script src="/static/numbers.js"></script>
+</body>
 </html>
