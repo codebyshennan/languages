@@ -50,6 +50,20 @@
   #btn-start { background: var(--primary); color: #fff; border: none; padding: 12px 36px; border-radius: 8px; font-size: 16px; font-weight: 700; cursor: pointer; }
   #btn-start:hover { background: var(--primary-dk); }
   audio { display: none; }
+  #mode-toggle { display: flex; justify-content: center; gap: 0; margin: 12px auto 0; max-width: 240px; }
+  .mode-btn-toggle { flex: 1; padding: 8px 0; font-size: 14px; font-weight: 700; border: 2px solid var(--primary); cursor: pointer; background: #fff; color: var(--primary); transition: background 0.2s, color 0.2s; }
+  .mode-btn-toggle:first-child { border-radius: 6px 0 0 6px; }
+  .mode-btn-toggle:last-child { border-radius: 0 6px 6px 0; }
+  .mode-btn-toggle.active { background: var(--primary); color: #fff; }
+  #listen-speaker { display: none; font-size: 64px; color: var(--primary); margin: 32px 0 16px; }
+  #listen-input { display: none; font-size: 28px; font-weight: 700; width: 160px; padding: 10px 16px; border: 2px solid #ccc; border-radius: 8px; text-align: center; outline: none; }
+  #listen-input:focus { border-color: var(--primary); }
+  #listen-submit { display: none; background: var(--primary); color: #fff; }
+  #listen-submit:hover { background: var(--primary-dk); }
+  #listen-replay { display: none; background: #fff; color: var(--primary); border: 2px solid var(--primary); padding: 8px 20px; font-size: 13px; }
+  .listen-result { font-size: 20px; font-weight: 700; margin: 12px 0; }
+  .listen-correct { color: #27AE60; }
+  .listen-incorrect { color: #C0392B; }
 </style>
 </head>
 <body>
@@ -65,10 +79,19 @@
   <span>Level: <span class="val" id="num-level">1</span></span>
   <span id="num-progress">0/5 to Level 2</span>
 </div>
+<div id="mode-toggle">
+  <button class="mode-btn-toggle active" data-mode="speak"><i class="fa-solid fa-microphone"></i> Speak</button>
+  <button class="mode-btn-toggle" data-mode="listen"><i class="fa-solid fa-headphones"></i> Listen</button>
+</div>
 <div id="main-area">
   <div id="tip-card"><div class="tip-title"><i class="fa-solid fa-lightbulb"></i> Tip</div><div id="tip-text"></div><button id="tip-dismiss">&times;</button></div>
   <div id="number-display"></div>
   <div id="countdown-wrap"><div id="countdown-bar"></div></div>
+  <div id="listen-speaker"><i class="fa-solid fa-volume-high"></i></div>
+  <input type="text" id="listen-input" inputmode="numeric" pattern="[0-9]*" placeholder="?" autocomplete="off">
+  <button class="action-btn" id="listen-submit"><i class="fa-solid fa-check"></i> Submit</button>
+  <button class="action-btn" id="listen-replay"><i class="fa-solid fa-play"></i> Replay</button>
+  <div id="listen-result" class="listen-result" style="display:none;"></div>
   <button class="action-btn" id="record-btn"><i class="fa-solid fa-microphone"></i> Record</button>
   <button class="action-btn" id="stop-btn"><i class="fa-solid fa-stop"></i> Stop</button>
   <div id="recording-indicator" aria-live="polite"><div class="dot"></div> Recording&hellip;</div>
@@ -91,11 +114,76 @@
 <div id="start-overlay">
   <div id="start-card">
     <h2>Spanish Numbers</h2>
-    <p>A number will appear. You have a few seconds to read it, then record yourself saying it. Play back and self-assess.</p>
+    <p id="start-instructions">A number will appear. You have a few seconds to read it, then record yourself saying it. Play back and self-assess.</p>
     <button id="btn-start">Start</button>
   </div>
 </div>
 <script src="/static/spanish_numbers_config.js"></script>
+<script>
+(function() {
+  var MODE_KEY = 'numbers_mode_' + (window.NUMBER_CONFIG ? window.NUMBER_CONFIG.langKey : '');
+  var mode = localStorage.getItem(MODE_KEY) || 'speak';
+  document.body.setAttribute('data-numbers-mode', mode);
+})();
+</script>
 <script src="/static/numbers.js"></script>
+<script>
+(function() {
+  var MODE_KEY = 'numbers_mode_' + (window.NUMBER_CONFIG ? window.NUMBER_CONFIG.langKey : '');
+  var currentMode = document.body.getAttribute('data-numbers-mode') || 'speak';
+  var toggleBtns = document.querySelectorAll('.mode-btn-toggle');
+  var startInstructions = document.getElementById('start-instructions');
+
+  toggleBtns.forEach(function(btn) {
+    btn.classList.toggle('active', btn.getAttribute('data-mode') === currentMode);
+  });
+
+  if (startInstructions) {
+    startInstructions.textContent = currentMode === 'listen'
+      ? 'You will hear a number spoken aloud. Type the number you hear and submit before time runs out.'
+      : 'A number will appear. You have a few seconds to read it, then record yourself saying it. Play back and self-assess.';
+  }
+
+  function checkTTS(cb) {
+    if (!window.speechSynthesis) { cb(false); return; }
+    var voices = speechSynthesis.getVoices();
+    if (voices.length > 0) { cb(hasLangVoice(voices)); return; }
+    speechSynthesis.onvoiceschanged = function() {
+      cb(hasLangVoice(speechSynthesis.getVoices()));
+    };
+    setTimeout(function() { cb(hasLangVoice(speechSynthesis.getVoices())); }, 1000);
+  }
+
+  function hasLangVoice(voices) {
+    var lang = window.NUMBER_CONFIG.lang;
+    var langShort = lang.split('-')[0];
+    for (var i = 0; i < voices.length; i++) {
+      if (voices[i].lang === lang || voices[i].lang.indexOf(langShort) === 0) return true;
+    }
+    return false;
+  }
+
+  checkTTS(function(available) {
+    if (!available) {
+      var toggle = document.getElementById('mode-toggle');
+      if (toggle) toggle.style.display = 'none';
+      if (currentMode === 'listen') {
+        localStorage.setItem(MODE_KEY, 'speak');
+        location.reload();
+      }
+    } else {
+      toggleBtns.forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          var newMode = btn.getAttribute('data-mode');
+          if (newMode !== currentMode) {
+            localStorage.setItem(MODE_KEY, newMode);
+            location.reload();
+          }
+        });
+      });
+    }
+  });
+})();
+</script>
 </body>
 </html>
