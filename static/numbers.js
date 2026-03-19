@@ -13,6 +13,7 @@ var LEVELS = [
 
 var STREAK_TO_ADVANCE = 5;
 var STORAGE_PREFIX = 'numbers_progress_';
+var LISTEN_COUNTDOWNS = [5, 7, 10, 12, 15]; // per level, for listen mode
 
 // ── State ────────────────────────────────────────────────────────────────
 
@@ -20,9 +21,10 @@ function createState() {
   return { level: 1, streak: 0, totalCorrect: 0, totalAttempts: 0, bestLevel: 1 };
 }
 
-function loadState(langKey) {
+function loadState(langKey, mode) {
   try {
-    var raw = localStorage.getItem(STORAGE_PREFIX + langKey);
+    var key = STORAGE_PREFIX + langKey + (mode === 'listen' ? '_listen' : '');
+    var raw = localStorage.getItem(key);
     if (raw) {
       var s = JSON.parse(raw);
       return {
@@ -37,9 +39,10 @@ function loadState(langKey) {
   return createState();
 }
 
-function saveState(langKey, state) {
+function saveState(langKey, state, mode) {
   try {
-    localStorage.setItem(STORAGE_PREFIX + langKey, JSON.stringify(state));
+    var key = STORAGE_PREFIX + langKey + (mode === 'listen' ? '_listen' : '');
+    localStorage.setItem(key, JSON.stringify(state));
   } catch (e) { /* ignore */ }
 }
 
@@ -76,7 +79,10 @@ function generateNumber(level) {
   return Math.floor(Math.random() * (cfg.max - newMin + 1)) + newMin;
 }
 
-function getCountdown(level) {
+function getCountdown(level, mode) {
+  if (mode === 'listen') {
+    return LISTEN_COUNTDOWNS[level - 1] || LISTEN_COUNTDOWNS[0];
+  }
   var cfg = LEVELS[level - 1] || LEVELS[0];
   return cfg.countdown;
 }
@@ -98,6 +104,7 @@ function getLevelTip(level) {
 
 window.NumbersEngine = {
   LEVELS: LEVELS,
+  LISTEN_COUNTDOWNS: LISTEN_COUNTDOWNS,
   STREAK_TO_ADVANCE: STREAK_TO_ADVANCE,
   createState: createState,
   loadState: loadState,

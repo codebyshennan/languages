@@ -123,6 +123,36 @@
   assert('getLevelTip(1) returns first tip', E.getLevelTip(1), 'Tip 1');
   assert('getLevelTip(5) returns fifth tip', E.getLevelTip(5), 'Tip 5');
 
+  // Listen mode countdowns
+  assert('Listen countdown level 1 = 5', E.getCountdown(1, 'listen'), 5);
+  assert('Listen countdown level 2 = 7', E.getCountdown(2, 'listen'), 7);
+  assert('Listen countdown level 3 = 10', E.getCountdown(3, 'listen'), 10);
+  assert('Listen countdown level 4 = 12', E.getCountdown(4, 'listen'), 12);
+  assert('Listen countdown level 5 = 15', E.getCountdown(5, 'listen'), 15);
+
+  // Speak mode countdowns unchanged (backward compat)
+  assert('Speak countdown level 1 = 3 (default)', E.getCountdown(1), 3);
+  assert('Speak countdown level 5 = 7 (default)', E.getCountdown(5), 7);
+
+  // Listen mode state key
+  var listenState = E.createState();
+  E.saveState('test_listen', listenState, 'listen');
+  var loaded = E.loadState('test_listen', 'listen');
+  assert('Listen state loads from _listen key', loaded.level, 1);
+  localStorage.removeItem('numbers_progress_test_listen_listen');
+
+  // Speak and listen states are independent
+  var speakState = E.createState();
+  speakState.level = 3;
+  E.saveState('test_indep', speakState);
+  var listenState2 = E.createState();
+  listenState2.level = 1;
+  E.saveState('test_indep', listenState2, 'listen');
+  assert('Speak state independent', E.loadState('test_indep').level, 3);
+  assert('Listen state independent', E.loadState('test_indep', 'listen').level, 1);
+  localStorage.removeItem('numbers_progress_test_indep');
+  localStorage.removeItem('numbers_progress_test_indep_listen');
+
   // Print results
   var out = document.getElementById('out');
   out.textContent = results.join('\n') + '\n\n' + passed + ' passed, ' + failed + ' failed';
