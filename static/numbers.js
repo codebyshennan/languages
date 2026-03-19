@@ -362,10 +362,263 @@ function initUI() {
   updateProgressStrip();
 }
 
+// ── Listen Mode UI Controller ─────────────────────────────────────────
+
+function initListenUI() {
+  var config = window.NUMBER_CONFIG;
+  if (!config) return;
+
+  var langKey = config.langKey;
+  var state = NumbersEngine.loadState(langKey, 'listen');
+  var session = { attempts: 0, correct: 0 };
+
+  // DOM refs — shared
+  var elCountdown  = document.getElementById('countdown-bar');
+  var elAnswer     = document.getElementById('answer-reveal');
+  var elAnswerText = document.getElementById('answer-text');
+  var elStreak     = document.getElementById('num-streak');
+  var elLevel      = document.getElementById('num-level');
+  var elProgress   = document.getElementById('num-progress');
+  var elLevelBadge = document.getElementById('level-badge');
+  var elTipCard    = document.getElementById('tip-card');
+  var elTipText    = document.getElementById('tip-text');
+  var elTipDismiss = document.getElementById('tip-dismiss');
+  var elTipBtn     = document.getElementById('tip-btn');
+  var elSessionEnd = document.getElementById('session-end');
+  var elMainArea   = document.getElementById('main-area');
+  var elStartOver  = document.getElementById('start-overlay');
+  var elBtnStart   = document.getElementById('btn-start');
+  var elEndAttempts= document.getElementById('end-attempts');
+  var elEndCorrect = document.getElementById('end-correct');
+  var elEndAccuracy= document.getElementById('end-accuracy');
+  var elEndLevel   = document.getElementById('end-level');
+  var elBtnRetry   = document.getElementById('btn-retry');
+
+  // DOM refs — listen mode specific
+  var elSpeakerIcon  = document.getElementById('listen-speaker');
+  var elListenReplay = document.getElementById('listen-replay');
+  var elListenInput  = document.getElementById('listen-input');
+  var elListenSubmit = document.getElementById('listen-submit');
+  var elListenResult = document.getElementById('listen-result');
+  var elNumberDisplay= document.getElementById('number-display');
+
+  if (!elSpeakerIcon) return;
+
+  // Hide speak-mode elements
+  var speakEls = ['record-btn', 'stop-btn', 'replay-btn', 'recording-indicator', 'playback-audio', 'btn-got-it', 'btn-missed', 'btn-skip'];
+  speakEls.forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  });
+  if (elNumberDisplay) elNumberDisplay.style.display = 'none';
+
+  var countdownTimer = null;
+  var currentNumber = null;
+  var lastShownLevel = 0;
+  var roundActive = false;
+
+  // TTS setup
+  var ttsVoice = null;
+  function pickVoice() {
+    var voices = speechSynthesis.getVoices();
+    var lang = config.lang;
+    var langShort = lang.split('-')[0];
+    for (var i = 0; i < voices.length; i++) {
+      if (voices[i].lang === lang) { ttsVoice = voices[i]; return; }
+    }
+    for (var j = 0; j < voices.length; j++) {
+      if (voices[j].lang.indexOf(langShort) === 0) { ttsVoice = voices[j]; return; }
+    }
+  }
+  pickVoice();
+  if (speechSynthesis.onvoiceschanged !== undefined) {
+    speechSynthesis.onvoiceschanged = pickVoice;
+  }
+
+  function speak(text, onEnd) {
+    speechSynthesis.cancel();
+    var utter = new SpeechSynthesisUtterance(text);
+    if (ttsVoice) utter.voice = ttsVoice;
+    utter.lang = config.lang;
+    utter.rate = 1.0;
+    if (onEnd) utter.onend = onEnd;
+    utter.onerror = function() { if (onEnd) onEnd(); };
+    speechSynthesis.speak(utter);
+  }
+
+  // UI helpers
+  function updateProgressStrip() {
+    elStreak.textContent = state.streak;
+    elLevel.textContent = state.level;
+    elProgress.textContent = state.streak + '/' + NumbersEngine.STREAK_TO_ADVANCE + ' to Level ' + (state.level < 5 ? state.level + 1 : 'MAX');
+    elLevelBadge.textContent = 'Level ' + state.level + ': ' + NumbersEngine.getLevelLabel(state.level);
+  }
+
+  function showTipIfNew() {
+    if (state.level !== lastShownLevel) {
+      lastShownLevel = state.level;
+      var tip = NumbersEngine.getLevelTip(state.level);
+      if (tip) {
+        elTipText.textContent = tip;
+        elTipCard.style.display = 'block';
+      }
+    }
+  }
+
+  function dismissTip() { elTipCard.style.display = 'none'; }
+
+  function hideListenControls() {
+    elCountdown.style.width = '0%';
+    elListenReplay.style.display = 'none';
+    elListenInput.style.display = 'none';
+    elListenSubmit.style.display = 'none';
+    elListenResult.style.display = 'none';
+    elAnswer.style.display = 'none';
+    elSpeakerIcon.style.display = 'none';
+  }
+
+  // Round flow
+  function startRound() {
+    hideListenControls();
+    showTipIfNew();
+    updateProgressStrip();
+    roundActive = true;
+
+    currentNumber = NumbersEngine.generateNumber(state.level);
+    var words = config.numberToWords(currentNumber);
+
+    // Show speaker icon
+    elSpeakerIcon.style.display = 'block';
+    elListenInput.value = '';
+
+    // Speak the number, then start countdown
+    speak(words, function() {
+      if (!roundActive) return;
+      // Show input controls
+      elListenInput.style.display = 'inline-block';
+      elListenSubmit.style.display = 'inline-block';
+      elListenReplay.style.display = 'inline-block';
+      elListenInput.focus();
+
+      // Start countdown
+      var duration = NumbersEngine.getCountdown(state.level, 'listen');
+      elCountdown.style.transition = 'none';
+      elCountdown.style.width = '100%';
+      elCountdown.offsetWidth; // force reflow
+      elCountdown.style.transition = 'width ' + duration + 's linear';
+      elCountdown.style.width = '0%';
+
+      countdownTimer = setTimeout(function() {
+        if (roundActive) submitAnswer();
+      }, duration * 1000);
+    });
+  }
+
+  function submitAnswer() {
+    if (!roundActive) return;
+    roundActive = false;
+    clearTimeout(countdownTimer);
+    elCountdown.style.transition = 'none';
+    elCountdown.style.width = '0%';
+
+    var raw = elListenInput.value.replace(/[,\s]/g, '');
+    var userAnswer = parseInt(raw, 10);
+    var correct = (!isNaN(userAnswer) && userAnswer === currentNumber);
+
+    session.attempts++;
+    if (correct) session.correct++;
+    NumbersEngine.recordResult(state, correct);
+    NumbersEngine.saveState(langKey, state, 'listen');
+
+    // Show result
+    elListenInput.style.display = 'none';
+    elListenSubmit.style.display = 'none';
+    elListenReplay.style.display = 'none';
+
+    elListenResult.textContent = correct ? 'Correct!' : 'Incorrect \u2014 ' + currentNumber.toLocaleString();
+    elListenResult.className = 'listen-result ' + (correct ? 'listen-correct' : 'listen-incorrect');
+    elListenResult.style.display = 'block';
+
+    // Show answer word form
+    elAnswerText.textContent = config.numberToWords(currentNumber);
+    elAnswer.style.display = 'block';
+
+    // Next round after delay
+    var delay = correct ? 1500 : 3000;
+    setTimeout(function() { startRound(); }, delay);
+  }
+
+  function endSession() {
+    roundActive = false;
+    clearTimeout(countdownTimer);
+    speechSynthesis.cancel();
+    elMainArea.style.display = 'none';
+    elSessionEnd.style.display = 'block';
+    elEndAttempts.textContent = session.attempts;
+    elEndCorrect.textContent = session.correct;
+    elEndAccuracy.textContent = session.attempts > 0
+      ? Math.round(100 * session.correct / session.attempts) + '%' : '\u2014';
+    elEndLevel.textContent = state.bestLevel;
+  }
+
+  function retry() {
+    session = { attempts: 0, correct: 0 };
+    elSessionEnd.style.display = 'none';
+    elMainArea.style.display = 'block';
+    startRound();
+  }
+
+  // Event listeners
+  elBtnStart.addEventListener('click', function() {
+    elStartOver.style.display = 'none';
+    elMainArea.style.display = 'block';
+    startRound();
+  });
+
+  elListenSubmit.addEventListener('click', function() { submitAnswer(); });
+  elListenInput.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') { e.preventDefault(); submitAnswer(); }
+  });
+  elListenReplay.addEventListener('click', function() {
+    if (currentNumber !== null) {
+      speak(config.numberToWords(currentNumber));
+    }
+  });
+
+  elTipDismiss.addEventListener('click', dismissTip);
+  elTipBtn.addEventListener('click', function() {
+    var tip = NumbersEngine.getLevelTip(state.level);
+    if (tip) { elTipText.textContent = tip; elTipCard.style.display = 'block'; }
+  });
+  elBtnRetry.addEventListener('click', retry);
+
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') endSession();
+  });
+
+  updateProgressStrip();
+}
+
+// ── Boot ──────────────────────────────────────────────────────────────
+
+function bootUI() {
+  window._numbersBooted = true;
+  var mode = document.body.getAttribute('data-numbers-mode');
+  if (mode === 'listen') {
+    initListenUI();
+  } else {
+    initUI();
+  }
+}
+
+window.NumbersEngine.bootUI = bootUI;
+
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initUI);
+  document.addEventListener('DOMContentLoaded', function() {
+    if (!window._numbersBooted) bootUI();
+  });
 } else {
-  initUI();
+  setTimeout(function() { if (!window._numbersBooted) bootUI(); }, 0);
 }
 
 })();
