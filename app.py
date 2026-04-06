@@ -6,19 +6,23 @@ Serves all 3 language apps from one Flask instance.
 Run:  python3 app.py
 """
 
+import io
 from pathlib import Path
-from flask import Flask, jsonify, render_template
+
 import openpyxl
+from flask import Flask, abort, jsonify, render_template, request, send_file
+from gtts import gTTS
 
 BASE = Path(__file__).parent
-app  = Flask(__name__)
+app = Flask(__name__)
 
 # ── Vocab loaders ─────────────────────────────────────────────────────────────
 
+
 def _load_bahasa():
-    src  = BASE / "indonesian" / "Bahasa_Indonesia_Melayu_2000_Words_FINAL.xlsx"
+    src = BASE / "indonesian" / "Bahasa_Indonesia_Melayu_2000_Words_FINAL.xlsx"
     xlsm = BASE / "indonesian" / "Bahasa_Vocab.xlsm"
-    src  = xlsm if xlsm.exists() else src
+    src = xlsm if xlsm.exists() else src
     print(f"Loading Bahasa vocab from {src}…")
 
     wb = openpyxl.load_workbook(src, read_only=True, data_only=True)
@@ -28,15 +32,17 @@ def _load_bahasa():
         for row in ws.iter_rows(min_row=2, values_only=True):
             if not row[0]:
                 continue
-            cards.append({
-                "num":     int(row[0]),
-                "indo":    str(row[1] or ""),
-                "malay":   str(row[2] or ""),
-                "english": str(row[3] or ""),
-                "cat":     str(row[4] or "General"),
-                "contoh":  str(row[5] or ""),
-                "eng_ex":  str(row[6] or ""),
-            })
+            cards.append(
+                {
+                    "num": int(row[0]),
+                    "indo": str(row[1] or ""),
+                    "malay": str(row[2] or ""),
+                    "english": str(row[3] or ""),
+                    "cat": str(row[4] or "General"),
+                    "contoh": str(row[5] or ""),
+                    "eng_ex": str(row[6] or ""),
+                }
+            )
     else:
         sheet_name = "Vocab" if "Vocab" in wb.sheetnames else wb.sheetnames[-1]
         ws = wb[sheet_name]
@@ -46,15 +52,17 @@ def _load_bahasa():
             num, cat, eng, indo, malay, contoh_id, _, eng_ex = row
             if not eng:
                 continue
-            cards.append({
-                "num":     int(num) if num else 0,
-                "indo":    str(indo      or ""),
-                "malay":   str(malay     or ""),
-                "english": str(eng       or ""),
-                "cat":     str(cat       or "General"),
-                "contoh":  str(contoh_id or ""),
-                "eng_ex":  str(eng_ex    or ""),
-            })
+            cards.append(
+                {
+                    "num": int(num) if num else 0,
+                    "indo": str(indo or ""),
+                    "malay": str(malay or ""),
+                    "english": str(eng or ""),
+                    "cat": str(cat or "General"),
+                    "contoh": str(contoh_id or ""),
+                    "eng_ex": str(eng_ex or ""),
+                }
+            )
     wb.close()
     print(f"  Loaded {len(cards)} Bahasa cards")
     return cards
@@ -72,19 +80,23 @@ def _load_viet():
     for row in ws.iter_rows(min_row=2, values_only=True):
         if not row[0]:
             continue
-        num, part, viet, english, hanzi, cantonese, cat, notes = (list(row) + [""] * 8)[:8]
+        num, part, viet, english, hanzi, cantonese, cat, notes = (list(row) + [""] * 8)[
+            :8
+        ]
         if not viet:
             continue
-        cards.append({
-            "num":       int(num),
-            "part":      str(part      or ""),
-            "viet":      str(viet      or ""),
-            "english":   str(english   or ""),
-            "hanzi":     str(hanzi     or ""),
-            "cantonese": str(cantonese or ""),
-            "cat":       str(cat       or "General"),
-            "notes":     str(notes     or ""),
-        })
+        cards.append(
+            {
+                "num": int(num),
+                "part": str(part or ""),
+                "viet": str(viet or ""),
+                "english": str(english or ""),
+                "hanzi": str(hanzi or ""),
+                "cantonese": str(cantonese or ""),
+                "cat": str(cat or "General"),
+                "notes": str(notes or ""),
+            }
+        )
     wb.close()
     print(f"  Loaded {len(cards)} Viet cards")
     return cards
@@ -104,83 +116,131 @@ def _load_spanish():
         num, cat, english, spanish, gender, notes, example_es, example_en = row
         if not spanish:
             continue
-        cards.append({
-            "num":        int(num) if num else 0,
-            "cat":        str(cat        or "General"),
-            "english":    str(english    or ""),
-            "spanish":    str(spanish    or ""),
-            "gender":     str(gender     or "-"),
-            "notes":      str(notes      or ""),
-            "example_es": str(example_es or ""),
-            "example_en": str(example_en or ""),
-        })
+        cards.append(
+            {
+                "num": int(num) if num else 0,
+                "cat": str(cat or "General"),
+                "english": str(english or ""),
+                "spanish": str(spanish or ""),
+                "gender": str(gender or "-"),
+                "notes": str(notes or ""),
+                "example_es": str(example_es or ""),
+                "example_en": str(example_en or ""),
+            }
+        )
     wb.close()
     print(f"  Loaded {len(cards)} Spanish cards")
     return cards
 
 
 # ── Cache vocab at startup ────────────────────────────────────────────────────
-BAHASA_CARDS  = _load_bahasa()
-VIET_CARDS    = _load_viet()
+BAHASA_CARDS = _load_bahasa()
+VIET_CARDS = _load_viet()
 SPANISH_CARDS = _load_spanish()
+
+# In-memory TTS cache: (word, lang) → MP3 bytes
+_tts_cache: dict = {}
+
+# Allowed gTTS language codes
+_ALLOWED_LANGS = {"vi", "id", "es"}
+
 
 # ── Vocab API routes ──────────────────────────────────────────────────────────
 @app.route("/api/vocab/bahasa")
 def api_bahasa():
     return jsonify(BAHASA_CARDS)
 
+
 @app.route("/api/vocab/viet")
 def api_viet():
     return jsonify(VIET_CARDS)
 
+
 @app.route("/api/vocab/spanish")
 def api_spanish():
     return jsonify(SPANISH_CARDS)
+
+
+# ── TTS API route ─────────────────────────────────────────────────────────────
+@app.route("/api/tts")
+def api_tts():
+    word = request.args.get("word", "").strip()
+    lang = request.args.get("lang", "vi").strip()
+
+    if not word:
+        abort(400, "Missing ?word= parameter")
+    if lang not in _ALLOWED_LANGS:
+        abort(400, f"?lang= must be one of: {', '.join(sorted(_ALLOWED_LANGS))}")
+
+    cache_key = (word, lang)
+    if cache_key not in _tts_cache:
+        buf = io.BytesIO()
+        gTTS(text=word, lang=lang).write_to_fp(buf)
+        buf.seek(0)
+        _tts_cache[cache_key] = buf.read()
+
+    return send_file(
+        io.BytesIO(_tts_cache[cache_key]),
+        mimetype="audio/mpeg",
+        as_attachment=False,
+    )
+
 
 # ── Page routes ───────────────────────────────────────────────────────────────
 @app.route("/")
 def home():
     return render_template("index.html")
 
+
 @app.route("/bahasa")
 def bahasa():
     return render_template("bahasa.html")
+
 
 @app.route("/viet")
 def viet():
     return render_template("viet.html")
 
+
 @app.route("/spanish")
 def spanish():
     return render_template("spanish.html")
+
 
 @app.route("/viet/pronunciation")
 def viet_pronunciation():
     return render_template("viet_pronunciation.html")
 
+
 @app.route("/viet/typing")
 def viet_typing():
     return render_template("viet_typing.html")
+
 
 @app.route("/spanish/pronunciation")
 def spanish_pronunciation():
     return render_template("spanish_pronunciation.html")
 
+
 @app.route("/bahasa/pronunciation")
 def bahasa_pronunciation():
     return render_template("bahasa_pronunciation.html")
+
 
 @app.route("/viet/numbers")
 def viet_numbers():
     return render_template("viet_numbers.html")
 
+
 @app.route("/bahasa/numbers")
 def bahasa_numbers():
     return render_template("bahasa_numbers.html")
 
+
 @app.route("/spanish/numbers")
 def spanish_numbers():
     return render_template("spanish_numbers.html")
+
 
 # ── Run ───────────────────────────────────────────────────────────────────────
 if __name__ == "__main__":
