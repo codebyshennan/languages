@@ -392,8 +392,17 @@ function initCatSelect() {
   }
   cats.sort();
   var sel = document.getElementById('cat-select');
-  sel.innerHTML = '<option value="All">All categories</option>' +
-    cats.map(function(c) { return '<option>' + c + '</option>'; }).join('');
+  while (sel.firstChild) sel.removeChild(sel.firstChild);
+  var allOption = document.createElement('option');
+  allOption.value = 'All';
+  allOption.textContent = 'All categories';
+  sel.appendChild(allOption);
+  cats.forEach(function(c) {
+    var option = document.createElement('option');
+    option.value = c;
+    option.textContent = c;
+    sel.appendChild(option);
+  });
   sel.addEventListener('change', function() { resetSession(); loadNextWord(); });
 }
 

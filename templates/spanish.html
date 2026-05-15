@@ -177,9 +177,13 @@ window.LANG_CONFIG = {
     document.getElementById("ans-english").textContent = mode === "es_en" ? card.english : card.spanish;
 
     var gWrap = document.getElementById("ans-gender-wrap");
-    if      (card.gender === "m") gWrap.innerHTML = '<span class="gender-badge gender-m">masculine</span>';
-    else if (card.gender === "f") gWrap.innerHTML = '<span class="gender-badge gender-f">feminine</span>';
-    else                          gWrap.innerHTML = "";
+    while (gWrap.firstChild) gWrap.removeChild(gWrap.firstChild);
+    if (card.gender === "m" || card.gender === "f") {
+      var genderBadge = document.createElement("span");
+      genderBadge.className = "gender-badge " + (card.gender === "m" ? "gender-m" : "gender-f");
+      genderBadge.textContent = card.gender === "m" ? "masculine" : "feminine";
+      gWrap.appendChild(genderBadge);
+    }
 
     var notesEl = document.getElementById("ans-notes");
     if (card.notes && card.notes !== "None" && card.notes.trim()) {

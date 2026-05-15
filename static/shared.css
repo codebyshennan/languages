@@ -99,6 +99,21 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 .stat-box.due .num { color: var(--amber); }
 .stat-box.new .num { color: var(--blue); }
 .stat-box.mat .num { color: var(--green); }
+.study-controls {
+  display: flex; justify-content: center; flex-wrap: wrap;
+  gap: 10px; margin: 0 0 18px;
+}
+.study-control {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: white; border: 1px solid #DDE7F0; border-radius: 8px;
+  padding: 8px 10px; color: var(--dgrey); font-size: 12px; font-weight: 700;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+}
+.study-control select {
+  border: 1px solid #C8D4E0; border-radius: 6px;
+  color: var(--primary); background: white; padding: 4px 8px;
+  font-size: 13px; font-weight: 700;
+}
 
 /* Card */
 #card-wrap { display: none; }
@@ -227,6 +242,19 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 .cat-table tr:nth-child(even) td { background: #F8FAFC; }
 .pct-bar { height: 6px; background: #E0E8F0; border-radius: 3px; overflow: hidden; margin-top: 3px; }
 .pct-fill { height: 100%; background: var(--green); border-radius: 3px; }
+.progress-tools {
+  display: flex; flex-wrap: wrap; gap: 8px;
+  border-top: 1px solid #EEF2F6; margin-top: 16px; padding-top: 14px;
+}
+.progress-tool-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 1px solid #C8D4E0; background: white; color: var(--primary);
+  border-radius: 8px; padding: 8px 12px; font-size: 12px; font-weight: 700;
+  cursor: pointer;
+}
+.progress-tool-btn:hover { background: var(--lgrey); }
+.progress-tool-btn.danger { color: var(--red); border-color: rgba(192,57,43,0.35); }
+.progress-tool-btn input { display: none; }
 
 /* Keyboard hints */
 .kbd { display: inline-block; background: #EEF2F6; border: 1px solid #C8D4E0;

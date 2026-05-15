@@ -7,6 +7,7 @@
 var cfg, allCards = [], queue = [], qpos = 0;
 var curCard = null, answerShown = false, sessCorr = 0, sessWrong = 0;
 var mode = "";
+var DEFAULT_STUDY_SETTINGS = { maxCards: 30, newCards: 10 };
 
 // ── SM-2 ───────────────────────────────────────────────────────────────────
 function sm2Update(pd, rating) {
@@ -62,6 +63,93 @@ function getAllCategories() {
   }
   return cats;
 }
+function clearChildren(el) {
+  while (el.firstChild) el.removeChild(el.firstChild);
+}
+function appendOption(select, value, label) {
+  var option = document.createElement('option');
+  option.value = value;
+  option.textContent = label;
+  select.appendChild(option);
+}
+function appendCell(row, text) {
+  var cell = document.createElement('td');
+  cell.textContent = text;
+  row.appendChild(cell);
+  return cell;
+}
+function getStudySettingsKey() {
+  return cfg.storageKey + '__study_settings';
+}
+function parseLimitValue(value) {
+  if (value === 'all') return null;
+  var parsed = parseInt(value, 10);
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : null;
+}
+function loadStudySettings() {
+  var settings = {};
+  try { settings = JSON.parse(localStorage.getItem(getStudySettingsKey()) || '{}') || {}; } catch (e) {}
+  return {
+    maxCards: settings.maxCards === null ? null : (Number.isFinite(settings.maxCards) ? settings.maxCards : DEFAULT_STUDY_SETTINGS.maxCards),
+    newCards: settings.newCards === null ? null : (Number.isFinite(settings.newCards) ? settings.newCards : DEFAULT_STUDY_SETTINGS.newCards),
+  };
+}
+function saveStudySettings(settings) {
+  try { localStorage.setItem(getStudySettingsKey(), JSON.stringify(settings)); } catch (e) {}
+}
+function setSelectValue(select, value) {
+  select.value = value === null ? 'all' : String(value);
+}
+function addLimitOptions(select, values) {
+  for (var i = 0; i < values.length; i++) {
+    var v = values[i];
+    appendOption(select, v === null ? 'all' : String(v), v === null ? 'All' : String(v));
+  }
+}
+function setupStudyControls() {
+  var welcome = document.getElementById('welcome');
+  if (!welcome || document.getElementById('study-controls')) return;
+
+  var settings = loadStudySettings();
+  var controls = document.createElement('div');
+  controls.id = 'study-controls';
+  controls.className = 'study-controls';
+
+  function addControl(labelText, id, values, currentValue) {
+    var field = document.createElement('label');
+    field.className = 'study-control';
+    var label = document.createElement('span');
+    label.textContent = labelText;
+    var select = document.createElement('select');
+    select.id = id;
+    addLimitOptions(select, values);
+    setSelectValue(select, currentValue);
+    field.appendChild(label);
+    field.appendChild(select);
+    controls.appendChild(field);
+    return select;
+  }
+
+  var maxSelect = addControl('Session', 'study-max-cards', [10, 20, 30, 50, null], settings.maxCards);
+  var newSelect = addControl('New cards', 'study-new-cards', [0, 5, 10, 20, null], settings.newCards);
+
+  function persist() {
+    saveStudySettings({
+      maxCards: parseLimitValue(maxSelect.value),
+      newCards: parseLimitValue(newSelect.value),
+    });
+  }
+
+  maxSelect.addEventListener('change', persist);
+  newSelect.addEventListener('change', persist);
+
+  var statGrid = welcome.querySelector('.stat-grid');
+  if (statGrid && statGrid.nextSibling) {
+    welcome.insertBefore(controls, statGrid.nextSibling);
+  } else {
+    welcome.appendChild(controls);
+  }
+}
 function loadProgress(forceAll) {
   try {
     var cat = forceAll ? 'All' : getCurrentCat();
@@ -103,6 +191,76 @@ function saveProgress(p) {
       localStorage.setItem(getCatKey(cat), JSON.stringify(p));
     }
   } catch (e) { console.warn('Could not save progress:', e); }
+}
+function getProgressSnapshot() {
+  var cats = getAllCategories();
+  var categories = {};
+  for (var i = 0; i < cats.length; i++) {
+    var key = getCatKey(cats[i]);
+    try { categories[cats[i]] = JSON.parse(localStorage.getItem(key) || '{}'); } catch (e) { categories[cats[i]] = {}; }
+  }
+  return {
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    storageKey: cfg.storageKey,
+    title: document.title,
+    categories: categories,
+    studySettings: loadStudySettings(),
+  };
+}
+function exportProgress() {
+  var snapshot = getProgressSnapshot();
+  var blob = new Blob([JSON.stringify(snapshot, null, 2)], { type: 'application/json' });
+  var url = URL.createObjectURL(blob);
+  var link = document.createElement('a');
+  link.href = url;
+  link.download = cfg.storageKey + '-progress.json';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+function importProgress(file) {
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function() {
+    try {
+      var snapshot = JSON.parse(String(reader.result || '{}'));
+      if (!snapshot.categories || typeof snapshot.categories !== 'object') {
+        throw new Error('Missing categories');
+      }
+      var cats = Object.keys(snapshot.categories);
+      for (var i = 0; i < cats.length; i++) {
+        var cat = cats[i];
+        var data = snapshot.categories[cat];
+        if (data && typeof data === 'object') {
+          localStorage.setItem(getCatKey(cat), JSON.stringify(data));
+        }
+      }
+      if (snapshot.studySettings && typeof snapshot.studySettings === 'object') {
+        saveStudySettings({
+          maxCards: snapshot.studySettings.maxCards === null ? null : parseLimitValue(String(snapshot.studySettings.maxCards)),
+          newCards: snapshot.studySettings.newCards === null ? null : parseLimitValue(String(snapshot.studySettings.newCards)),
+        });
+      }
+      refreshOverview();
+      openStats();
+    } catch (e) {
+      alert('Could not import progress. Choose a progress JSON file exported from this app.');
+    }
+  };
+  reader.readAsText(file);
+}
+function resetProgress() {
+  if (!confirm('Reset progress for this language? This cannot be undone unless you export a backup first.')) return;
+  var cats = getAllCategories();
+  for (var i = 0; i < cats.length; i++) {
+    localStorage.removeItem(getCatKey(cats[i]));
+  }
+  localStorage.removeItem(cfg.storageKey);
+  localStorage.removeItem(cfg.storageKey + '__migrated');
+  refreshOverview();
+  openStats();
 }
 function migrateProgress() {
   if (localStorage.getItem(cfg.storageKey + '__migrated')) return;
@@ -311,16 +469,37 @@ function startSession() {
   var catSel  = document.getElementById("cat-select");
   var cat     = catSel ? catSel.value : "All";
   var p       = loadProgress();
+  var settings = loadStudySettings();
   var candidates = allCards.filter(function(c) {
     return (cat === "All" || c.cat === cat) &&
            isDue(p[String(c.num)] || {}) &&
            cfg.filterExtra(c);
   });
-  // Fisher-Yates shuffle
-  for (var i = candidates.length - 1; i > 0; i--) {
-    var j = Math.floor(Math.random() * (i + 1));
-    var tmp = candidates[i]; candidates[i] = candidates[j]; candidates[j] = tmp;
+
+  var reviewCards = [];
+  var newCards = [];
+  for (var i = 0; i < candidates.length; i++) {
+    var pd = p[String(candidates[i].num)] || {};
+    if (cardStage(pd) === 'new') newCards.push(candidates[i]);
+    else reviewCards.push(candidates[i]);
   }
+
+  shuffleCards(reviewCards);
+  shuffleCards(newCards);
+  if (settings.newCards !== null) newCards = newCards.slice(0, settings.newCards);
+
+  candidates = reviewCards.concat(newCards);
+  if (settings.maxCards !== null) candidates = candidates.slice(0, settings.maxCards);
+
+  if (candidates.length > 1) {
+    var reviewCount = reviewCards.length;
+    var limitedReviews = candidates.slice(0, Math.min(reviewCount, candidates.length));
+    var limitedNew = candidates.slice(limitedReviews.length);
+    shuffleCards(limitedReviews);
+    shuffleCards(limitedNew);
+    candidates = limitedReviews.concat(limitedNew);
+  }
+
   queue     = candidates.map(function(c) { return c.num; });
   qpos      = 0; sessCorr = 0; sessWrong = 0;
   if (queue.length === 0) {
@@ -329,6 +508,13 @@ function startSession() {
   }
   showScreen("card");
   nextCard();
+}
+
+function shuffleCards(cards) {
+  for (var i = cards.length - 1; i > 0; i--) {
+    var j = Math.floor(Math.random() * (i + 1));
+    var tmp = cards[i]; cards[i] = cards[j]; cards[j] = tmp;
+  }
 }
 
 function nextCard() {
@@ -437,28 +623,107 @@ function openStats() {
   document.getElementById("modal-overlay").classList.add("open");
   var ov   = computeOverview();
   var cats = computeCatStats();
-  var html = '<div class="overview-grid">' +
-    '<div class="ov-box"><div class="n" style="color:var(--amber)">' + ov.due + '</div><div class="l">Due Today</div></div>' +
-    '<div class="ov-box"><div class="n">' + ov.total + '</div><div class="l">Total</div></div>' +
-    '<div class="ov-box"><div class="n" style="color:var(--blue)">' + ov.new + '</div><div class="l">New</div></div>' +
-    '<div class="ov-box"><div class="n" style="color:var(--amber)">' + (ov.learning + ov.review) + '</div><div class="l">Learning</div></div>' +
-    '<div class="ov-box"><div class="n" style="color:var(--green)">' + ov.mature + '</div><div class="l">Mature</div></div>' +
-    '<div class="ov-box"><div class="n">' + ov.accuracy + '%</div><div class="l">Accuracy</div></div>' +
-    '</div>' +
-    '<h4 style="color:var(--primary);margin-bottom:8px;">Progress by Category</h4>' +
-    '<table class="cat-table"><thead><tr><th>Category</th><th>Total</th><th>Mature</th><th>Due</th></tr></thead><tbody>';
+  var body = document.getElementById("modal-body");
+  clearChildren(body);
+
+  function addOverviewBox(parent, value, label, color) {
+    var box = document.createElement('div');
+    box.className = 'ov-box';
+    var n = document.createElement('div');
+    n.className = 'n';
+    if (color) n.style.color = color;
+    n.textContent = value;
+    var l = document.createElement('div');
+    l.className = 'l';
+    l.textContent = label;
+    box.appendChild(n);
+    box.appendChild(l);
+    parent.appendChild(box);
+  }
+
+  var overviewGrid = document.createElement('div');
+  overviewGrid.className = 'overview-grid';
+  addOverviewBox(overviewGrid, ov.due, 'Due Today', 'var(--amber)');
+  addOverviewBox(overviewGrid, ov.total, 'Total');
+  addOverviewBox(overviewGrid, ov.new, 'New', 'var(--blue)');
+  addOverviewBox(overviewGrid, ov.learning + ov.review, 'Learning', 'var(--amber)');
+  addOverviewBox(overviewGrid, ov.mature, 'Mature', 'var(--green)');
+  addOverviewBox(overviewGrid, ov.accuracy + '%', 'Accuracy');
+  body.appendChild(overviewGrid);
+
+  var heading = document.createElement('h4');
+  heading.style.color = 'var(--primary)';
+  heading.style.marginBottom = '8px';
+  heading.textContent = 'Progress by Category';
+  body.appendChild(heading);
+
+  var table = document.createElement('table');
+  table.className = 'cat-table';
+  var thead = document.createElement('thead');
+  var headRow = document.createElement('tr');
+  ['Category', 'Total', 'Mature', 'Due'].forEach(function(label) {
+    var th = document.createElement('th');
+    th.textContent = label;
+    headRow.appendChild(th);
+  });
+  thead.appendChild(headRow);
+  table.appendChild(thead);
+  var tbody = document.createElement('tbody');
   var entries = Object.keys(cats).sort();
   for (var i = 0; i < entries.length; i++) {
     var cat = entries[i];
     var s   = cats[cat];
     var pct = s.total ? Math.round(100 * s.mature / s.total) : 0;
-    html += '<tr><td>' + cat + '</td><td>' + s.total + '</td>' +
-      '<td><div>' + s.mature + ' (' + pct + '%)</div>' +
-      '<div class="pct-bar"><div class="pct-fill" style="width:' + pct + '%"></div></div></td>' +
-      '<td style="color:' + (s.due > 0 ? 'var(--amber)' : 'var(--dgrey)') + ';font-weight:' + (s.due > 0 ? 700 : 400) + '">' + (s.due || '\u2014') + '</td></tr>';
+    var row = document.createElement('tr');
+    appendCell(row, cat);
+    appendCell(row, String(s.total));
+    var matureCell = document.createElement('td');
+    var matureText = document.createElement('div');
+    matureText.textContent = s.mature + ' (' + pct + '%)';
+    var pctBar = document.createElement('div');
+    pctBar.className = 'pct-bar';
+    var pctFill = document.createElement('div');
+    pctFill.className = 'pct-fill';
+    pctFill.style.width = pct + '%';
+    pctBar.appendChild(pctFill);
+    matureCell.appendChild(matureText);
+    matureCell.appendChild(pctBar);
+    row.appendChild(matureCell);
+    var dueCell = appendCell(row, s.due ? String(s.due) : '\u2014');
+    dueCell.style.color = s.due > 0 ? 'var(--amber)' : 'var(--dgrey)';
+    dueCell.style.fontWeight = s.due > 0 ? '700' : '400';
+    tbody.appendChild(row);
   }
-  html += '</tbody></table>';
-  document.getElementById("modal-body").innerHTML = html;
+  table.appendChild(tbody);
+  body.appendChild(table);
+
+  var tools = document.createElement('div');
+  tools.className = 'progress-tools';
+  var exportBtn = document.createElement('button');
+  exportBtn.type = 'button';
+  exportBtn.className = 'progress-tool-btn';
+  exportBtn.textContent = 'Export backup';
+  exportBtn.addEventListener('click', exportProgress);
+  var importLabel = document.createElement('label');
+  importLabel.className = 'progress-tool-btn';
+  importLabel.textContent = 'Import backup';
+  var importInput = document.createElement('input');
+  importInput.type = 'file';
+  importInput.accept = 'application/json,.json';
+  importInput.addEventListener('change', function() {
+    importProgress(importInput.files && importInput.files[0]);
+    importInput.value = '';
+  });
+  importLabel.appendChild(importInput);
+  var resetBtn = document.createElement('button');
+  resetBtn.type = 'button';
+  resetBtn.className = 'progress-tool-btn danger';
+  resetBtn.textContent = 'Reset progress';
+  resetBtn.addEventListener('click', resetProgress);
+  tools.appendChild(exportBtn);
+  tools.appendChild(importLabel);
+  tools.appendChild(resetBtn);
+  body.appendChild(tools);
 }
 function closeStats() {
   document.getElementById("modal-overlay").classList.remove("open");
@@ -604,14 +869,16 @@ async function init() {
   cats.sort();
   var sel = document.getElementById("cat-select");
   if (sel) {
-    sel.innerHTML = '<option value="All">All categories</option>' +
-      cats.map(function(c) { return '<option>' + c + '</option>'; }).join("");
+    clearChildren(sel);
+    appendOption(sel, 'All', 'All categories');
+    cats.forEach(function(c) { appendOption(sel, c, c); });
     sel.addEventListener("change", refreshOverview);
   }
 
   // migrateProgress() must run after allCards is populated (the await above guarantees this)
   migrateProgress();
   cfg.initUI(allCards, setMode);
+  setupStudyControls();
   refreshOverview();
   showScreen("home");
   setupSwipe();
@@ -627,6 +894,9 @@ window.openStats    = openStats;
 window.closeStats   = closeStats;
 window.goHome       = goHome;
 window.toggleNav    = toggleNav;
+window.exportProgress = exportProgress;
+window.importProgress = importProgress;
+window.resetProgress  = resetProgress;
 
 setupTTSWidget();
 init();

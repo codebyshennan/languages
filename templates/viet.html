@@ -55,6 +55,7 @@
     <label>Part:</label>
     <select id="part-select"></select>
     <a href="/viet/pronunciation" class="mode-btn" style="text-decoration:none"><i class="fa-solid fa-book-open"></i> Guide</a>
+    <a href="/viet/tones" class="mode-btn" style="text-decoration:none"><i class="fa-solid fa-wave-square"></i> Tones</a>
     <a href="/viet/typing" class="mode-btn" style="text-decoration:none"><i class="fa-solid fa-keyboard"></i> Typing</a>
     <a href="/viet/numbers" class="mode-btn" style="text-decoration:none"><i class="fa-solid fa-hashtag"></i> Numbers</a>
     <div class="nav-sep"></div>
@@ -180,30 +181,78 @@ function renderBreakdown(word) {
     's\u1eafc': 'var(--red)',
     'n\u1eb7ng': '#7a3000'
   };
-  var html = '<table class="cat-table">';
-  html += '<tr><th>Syllable</th><th>Initial</th><th>Vowel</th><th>Final</th><th>Tone</th><th></th></tr>';
+  var wrapper = document.createElement('div');
+  var table = document.createElement('table');
+  table.className = 'cat-table';
+  var headerRow = document.createElement('tr');
+  ['Syllable', 'Initial', 'Vowel', 'Final', 'Tone', ''].forEach(function(label) {
+    var th = document.createElement('th');
+    th.textContent = label;
+    headerRow.appendChild(th);
+  });
+  table.appendChild(headerRow);
+
+  function appendTextCell(row, text, strong) {
+    var td = document.createElement('td');
+    if (strong) {
+      var el = document.createElement('strong');
+      el.textContent = text;
+      td.appendChild(el);
+    } else {
+      td.textContent = text;
+    }
+    row.appendChild(td);
+    return td;
+  }
+
   for (var i = 0; i < syllables.length; i++) {
     var s = syllables[i];
     var color = toneColors[s.tone] || 'var(--primary)';
-    html += '<tr>';
-    html += '<td><strong>' + s.raw + '</strong></td>';
-    html += '<td>' + (s.initial || '\u2014') + '</td>';
-    html += '<td>' + (s.nucleus || '\u2014') + '</td>';
-    html += '<td>' + (s.final || '\u2014') + '</td>';
-    html += '<td style="color:' + color + ';font-weight:700">' + s.tone + '</td>';
-    html += '<td><button class="pronounce-btn" onclick="window.VietSyllable && window.VietSyllable.callPronounce(\'' + s.raw.replace(/\\/g, '\\\\').replace(/'/g, "\\'") + '\', \'vi-VN\')"><i class="fa-solid fa-volume-low"></i></button></td>';
-    html += '</tr>';
+    var row = document.createElement('tr');
+    appendTextCell(row, s.raw, true);
+    appendTextCell(row, s.initial || '\u2014');
+    appendTextCell(row, s.nucleus || '\u2014');
+    appendTextCell(row, s.final || '\u2014');
+    var toneCell = appendTextCell(row, s.tone);
+    toneCell.style.color = color;
+    toneCell.style.fontWeight = '700';
+    var actionCell = document.createElement('td');
+    var btn = document.createElement('button');
+    btn.className = 'pronounce-btn';
+    btn.type = 'button';
+    btn.setAttribute('aria-label', 'Pronounce ' + s.raw);
+    btn.addEventListener('click', (function(raw) {
+      return function() {
+        if (window.VietSyllable) window.VietSyllable.callPronounce(raw, 'vi-VN');
+      };
+    })(s.raw));
+    var icon = document.createElement('i');
+    icon.className = 'fa-solid fa-volume-low';
+    btn.appendChild(icon);
+    actionCell.appendChild(btn);
+    row.appendChild(actionCell);
+    table.appendChild(row);
   }
-  html += '</table>';
-  html += '<div class="breakdown-footer"><a href="/viet/pronunciation"><i class="fa-solid fa-book-open"></i> Full Pronunciation Guide</a></div>';
-  return html;
+  wrapper.appendChild(table);
+  var footer = document.createElement('div');
+  footer.className = 'breakdown-footer';
+  var link = document.createElement('a');
+  link.href = '/viet/pronunciation';
+  var linkIcon = document.createElement('i');
+  linkIcon.className = 'fa-solid fa-book-open';
+  link.appendChild(linkIcon);
+  link.appendChild(document.createTextNode(' Full Pronunciation Guide'));
+  footer.appendChild(link);
+  wrapper.appendChild(footer);
+  return wrapper;
 }
 
 function showBreakdown(word) {
   if (!word) return;
   var panel = document.getElementById('breakdown-panel');
   if (!panel) return;
-  panel.innerHTML = renderBreakdown(word);
+  while (panel.firstChild) panel.removeChild(panel.firstChild);
+  panel.appendChild(renderBreakdown(word));
   panel.style.display = '';
   breakdownOpen = true;
 }
@@ -231,9 +280,18 @@ window.LANG_CONFIG = {
       if (!seen[allCards[i].part]) { seen[allCards[i].part] = true; parts.push(allCards[i].part); }
     }
     parts.sort();
-    document.getElementById("part-select").innerHTML =
-      '<option value="All">All parts</option>' +
-      parts.map(function(p) { return '<option>' + p + '</option>'; }).join("");
+    var partSelect = document.getElementById("part-select");
+    while (partSelect.firstChild) partSelect.removeChild(partSelect.firstChild);
+    var allOption = document.createElement('option');
+    allOption.value = 'All';
+    allOption.textContent = 'All parts';
+    partSelect.appendChild(allOption);
+    parts.forEach(function(p) {
+      var option = document.createElement('option');
+      option.value = p;
+      option.textContent = p;
+      partSelect.appendChild(option);
+    });
     setModeFn("vi_en");
   },
 
@@ -262,7 +320,10 @@ window.LANG_CONFIG = {
     // reset breakdown panel on each card load
     breakdownOpen = false;
     var panel = document.getElementById("breakdown-panel");
-    if (panel) { panel.style.display = "none"; panel.innerHTML = ""; }
+    if (panel) {
+      panel.style.display = "none";
+      while (panel.firstChild) panel.removeChild(panel.firstChild);
+    }
     var btn = document.getElementById("btn-breakdown");
     if (btn) btn.style.display = (mode === "vi_en") ? "" : "none";
     if (mode === "pron") return { text: card.viet, dir: "Pronunciation" };

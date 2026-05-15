@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vietnamese Tone Practice</title>
+<link rel="stylesheet" href="/static/shared.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<script src="/static/viet_syllable.js"></script>
+<style>
+  :root {
+    --primary: #8B0000;
+    --primary-dk: #6B0000;
+    --accent: #CC2233;
+    --accent2: #F4C430;
+    --card-shadow: rgba(139,0,0,0.12);
+    --card-bg: #FFFDF8;
+  }
+  .tone-page { max-width: 920px; margin: 0 auto; padding: 24px 16px 48px; }
+  .page-header { margin-bottom: 18px; }
+  .page-header h2 { color: var(--primary); font-size: 28px; margin-bottom: 6px; }
+  .page-header p { color: var(--dgrey); font-size: 14px; line-height: 1.5; }
+  .tone-tabs { display: flex; gap: 8px; margin: 18px 0; flex-wrap: wrap; }
+  .tone-tab {
+    border: 1px solid #D9E3ED; background: white; color: var(--primary);
+    border-radius: 8px; padding: 9px 13px; font-weight: 800; cursor: pointer;
+  }
+  .tone-tab.active { background: var(--primary); color: white; border-color: var(--primary); }
+  .tone-panel {
+    background: white; border-radius: 12px; padding: 22px;
+    box-shadow: 0 3px 14px rgba(0,0,0,0.08); margin-bottom: 18px;
+  }
+  .tone-stage {
+    min-height: 210px; display: grid; place-items: center; text-align: center;
+    border: 1px solid #EEF2F6; border-radius: 10px; background: #FFFCF4;
+    padding: 20px; margin-bottom: 16px;
+  }
+  .tone-word { font-size: 76px; font-weight: 900; color: var(--primary); line-height: 1; }
+  .tone-name { font-size: 17px; font-weight: 800; color: var(--accent); margin-top: 10px; }
+  .tone-meaning { color: var(--dgrey); font-size: 13px; margin-top: 4px; }
+  .tone-action-row { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-bottom: 14px; }
+  .tone-btn {
+    border: none; border-radius: 9px; padding: 11px 16px; font-weight: 800;
+    color: white; background: var(--accent); cursor: pointer; min-width: 120px;
+  }
+  .tone-btn.secondary { background: var(--primary); }
+  .tone-btn.muted { background: var(--dgrey); }
+  .tone-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .tone-choices { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .tone-choice {
+    min-height: 72px; border: 2px solid #E4ECF4; background: white; color: var(--primary);
+    border-radius: 10px; cursor: pointer; font-weight: 900; font-size: 15px;
+  }
+  .tone-choice small { display: block; color: var(--dgrey); font-weight: 700; margin-top: 2px; }
+  .tone-choice.correct { border-color: var(--green); background: #EAF8F0; }
+  .tone-choice.wrong { border-color: var(--red); background: #FDECEA; }
+  .tone-status {
+    min-height: 22px; text-align: center; color: var(--dgrey);
+    font-size: 13px; font-weight: 700; margin: 8px 0 0;
+  }
+  .tone-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 16px; }
+  .tone-stat { background: var(--lgrey); border-radius: 8px; padding: 12px; text-align: center; }
+  .tone-stat .n { color: var(--primary); font-size: 22px; font-weight: 900; }
+  .tone-stat .l { color: var(--dgrey); font-size: 11px; text-transform: uppercase; }
+  .tone-targets { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; }
+  .tone-target {
+    border: 1px solid #E4ECF4; border-radius: 8px; background: white;
+    padding: 10px 8px; text-align: center; cursor: pointer;
+  }
+  .tone-target.active { border-color: var(--primary); background: #FFF5E7; }
+  .tone-target .w { color: var(--primary); font-size: 24px; font-weight: 900; }
+  .tone-target .t { color: var(--dgrey); font-size: 11px; font-weight: 800; }
+  .tone-ref { margin-top: 18px; }
+  .tone-ref h3 { color: var(--primary); font-size: 16px; margin-bottom: 10px; }
+  .tone-ref-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .tone-ref-card { background: white; border-radius: 8px; padding: 12px; border: 1px solid #E4ECF4; }
+  .tone-ref-card strong { color: var(--primary); display: block; margin-bottom: 4px; }
+  .tone-ref-card span { color: var(--dgrey); font-size: 12px; line-height: 1.4; }
+  audio { width: 100%; max-width: 360px; margin-top: 10px; }
+  @media (max-width: 700px) {
+    .tone-word { font-size: 58px; }
+    .tone-choices, .tone-ref-grid { grid-template-columns: repeat(2, 1fr); }
+    .tone-targets, .tone-stats { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+</head>
+<body>
+<div id="topbar">
+  <h1><i class="fa-solid fa-wave-square"></i> VIET TONES</h1>
+  <div class="spacer"></div>
+  <div id="nav-menu" style="display:flex">
+    <a href="/viet" class="mode-btn" style="text-decoration:none"><i class="fa-solid fa-layer-group"></i> Cards</a>
+    <a href="/viet/pronunciation" class="mode-btn" style="text-decoration:none"><i class="fa-solid fa-book-open"></i> Guide</a>
+    <a href="/" class="mode-btn" style="text-decoration:none"><i class="fa-solid fa-house"></i> Home</a>
+  </div>
+</div>
+
+<main class="tone-page">
+  <section class="page-header">
+    <h2>Vietnamese Tone Practice</h2>
+    <p>Train tone recognition first, then record yourself producing the same tone on short syllables.</p>
+  </section>
+
+  <div class="tone-stats">
+    <div class="tone-stat"><div class="n" id="stat-streak">0</div><div class="l">Streak</div></div>
+    <div class="tone-stat"><div class="n" id="stat-correct">0</div><div class="l">Correct</div></div>
+    <div class="tone-stat"><div class="n" id="stat-attempts">0</div><div class="l">Attempts</div></div>
+    <div class="tone-stat"><div class="n" id="stat-accuracy">0%</div><div class="l">Accuracy</div></div>
+  </div>
+
+  <div class="tone-tabs">
+    <button class="tone-tab active" id="tab-listen" type="button">Listening</button>
+    <button class="tone-tab" id="tab-speak" type="button">Speaking</button>
+  </div>
+
+  <section class="tone-panel" id="listen-panel">
+    <div class="tone-stage">
+      <div>
+        <div class="tone-word" id="listen-word">?</div>
+        <div class="tone-name" id="listen-name">Hear the syllable, then choose the tone.</div>
+        <div class="tone-meaning" id="listen-meaning"></div>
+      </div>
+    </div>
+    <div class="tone-action-row">
+      <button class="tone-btn secondary" id="btn-hear" type="button"><i class="fa-solid fa-volume-high"></i> Hear Tone</button>
+      <button class="tone-btn muted" id="btn-next" type="button">Next</button>
+    </div>
+    <div class="tone-choices" id="tone-choices"></div>
+    <div class="tone-status" id="listen-status"></div>
+  </section>
+
+  <section class="tone-panel" id="speak-panel" style="display:none">
+    <div class="tone-stage">
+      <div>
+        <div class="tone-word" id="speak-word">ma</div>
+        <div class="tone-name" id="speak-name">ngang</div>
+        <div class="tone-meaning" id="speak-meaning">level, unmarked</div>
+        <audio id="playback" controls style="display:none"></audio>
+      </div>
+    </div>
+    <div class="tone-action-row">
+      <button class="tone-btn secondary" id="btn-target" type="button"><i class="fa-solid fa-volume-high"></i> Target</button>
+      <button class="tone-btn" id="btn-record" type="button"><i class="fa-solid fa-microphone"></i> Record</button>
+      <button class="tone-btn muted" id="btn-stop" type="button" disabled>Stop</button>
+    </div>
+    <div class="tone-targets" id="tone-targets"></div>
+    <div class="tone-action-row">
+      <button class="tone-btn" id="btn-self-good" type="button">Matched it</button>
+      <button class="tone-btn muted" id="btn-self-miss" type="button">Try again</button>
+    </div>
+    <div class="tone-status" id="speak-status">Pick a tone, hear the target, then record yourself.</div>
+  </section>
+
+  <section class="tone-ref">
+    <h3>Tone Cues</h3>
+    <div class="tone-ref-grid" id="tone-ref"></div>
+  </section>
+</main>
+
+<script>
+(function () {
+'use strict';
+
+var TONES = [
+  { id:'ngang',  num:1, word:'ma', name:'ngang',  meaning:'level, unmarked', cue:'Level and steady.' },
+  { id:'huyen',  num:2, word:'mà', name:'huyền',  meaning:'low falling', cue:'Start mid-low and fall gently.' },
+  { id:'hoi',    num:3, word:'mả', name:'hỏi',    meaning:'dipping', cue:'Dip down, then slightly recover.' },
+  { id:'nga',    num:4, word:'mã', name:'ngã',    meaning:'broken rising', cue:'Glottal break, then rise.' },
+  { id:'sac',    num:5, word:'má', name:'sắc',    meaning:'high rising', cue:'Short, high, rising finish.' },
+  { id:'nang',   num:6, word:'mạ', name:'nặng',   meaning:'low clipped', cue:'Low, short, firm stop.' },
+];
+var STORAGE_KEY = 'viet_tone_practice';
+var state = loadState();
+var mode = 'listen';
+var currentListen = null;
+var currentSpeak = null;
+var answered = false;
+var recorder = null;
+var chunks = [];
+var stream = null;
+var playbackUrl = null;
+
+function $(id) { return document.getElementById(id); }
+function loadState() {
+  try {
+    var saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+    return {
+      streak: saved.streak || 0,
+      correct: saved.correct || 0,
+      attempts: saved.attempts || 0,
+    };
+  } catch (e) {
+    return { streak: 0, correct: 0, attempts: 0 };
+  }
+}
+function saveState() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) {}
+}
+function updateStats() {
+  $('stat-streak').textContent = state.streak;
+  $('stat-correct').textContent = state.correct;
+  $('stat-attempts').textContent = state.attempts;
+  $('stat-accuracy').textContent = state.attempts ? Math.round(100 * state.correct / state.attempts) + '%' : '0%';
+}
+function speakTone(tone) {
+  if (window.VietSyllable) window.VietSyllable.callPronounce(tone.word, 'vi-VN');
+}
+function pickTone() {
+  currentListen = TONES[Math.floor(Math.random() * TONES.length)];
+  answered = false;
+  $('listen-word').textContent = '?';
+  $('listen-name').textContent = 'Hear the syllable, then choose the tone.';
+  $('listen-meaning').textContent = '';
+  $('listen-status').textContent = '';
+  Array.prototype.forEach.call(document.querySelectorAll('.tone-choice'), function(btn) {
+    btn.classList.remove('correct', 'wrong');
+    btn.disabled = false;
+  });
+}
+function grade(choiceId, button) {
+  if (!currentListen || answered) return;
+  answered = true;
+  var ok = choiceId === currentListen.id;
+  state.attempts++;
+  if (ok) {
+    state.correct++;
+    state.streak++;
+    $('listen-status').textContent = 'Correct: ' + currentListen.name + ' tone.';
+    button.classList.add('correct');
+  } else {
+    state.streak = 0;
+    $('listen-status').textContent = 'That was ' + currentListen.name + ' (' + currentListen.meaning + ').';
+    button.classList.add('wrong');
+  }
+  $('listen-word').textContent = currentListen.word;
+  $('listen-name').textContent = currentListen.name;
+  $('listen-meaning').textContent = currentListen.meaning;
+  Array.prototype.forEach.call(document.querySelectorAll('.tone-choice'), function(btn) {
+    btn.disabled = true;
+    if (btn.getAttribute('data-tone') === currentListen.id) btn.classList.add('correct');
+  });
+  saveState();
+  updateStats();
+}
+function setMode(nextMode) {
+  mode = nextMode;
+  $('listen-panel').style.display = mode === 'listen' ? '' : 'none';
+  $('speak-panel').style.display = mode === 'speak' ? '' : 'none';
+  $('tab-listen').classList.toggle('active', mode === 'listen');
+  $('tab-speak').classList.toggle('active', mode === 'speak');
+}
+function setSpeakTone(tone) {
+  currentSpeak = tone;
+  $('speak-word').textContent = tone.word;
+  $('speak-name').textContent = tone.name;
+  $('speak-meaning').textContent = tone.meaning;
+  $('speak-status').textContent = 'Target tone: ' + tone.name + '.';
+  Array.prototype.forEach.call(document.querySelectorAll('.tone-target'), function(btn) {
+    btn.classList.toggle('active', btn.getAttribute('data-tone') === tone.id);
+  });
+}
+function getMimeType() {
+  if (typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) return 'audio/webm;codecs=opus';
+  if (typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported('audio/mp4')) return 'audio/mp4';
+  return '';
+}
+function startRecording() {
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || typeof MediaRecorder === 'undefined') {
+    $('speak-status').textContent = 'Recording is not supported in this browser.';
+    return;
+  }
+  navigator.mediaDevices.getUserMedia({ audio: true }).then(function(nextStream) {
+    stream = nextStream;
+    chunks = [];
+    var mimeType = getMimeType();
+    recorder = new MediaRecorder(stream, mimeType ? { mimeType: mimeType } : {});
+    recorder.ondataavailable = function(e) { if (e.data.size) chunks.push(e.data); };
+    recorder.onstop = finishRecording;
+    recorder.start();
+    $('btn-record').disabled = true;
+    $('btn-stop').disabled = false;
+    $('speak-status').textContent = 'Recording... say ' + currentSpeak.word + '.';
+  }).catch(function() {
+    $('speak-status').textContent = 'Microphone permission is needed for speaking practice.';
+  });
+}
+function stopRecording() {
+  if (recorder && recorder.state !== 'inactive') recorder.stop();
+}
+function finishRecording() {
+  if (stream) {
+    stream.getTracks().forEach(function(track) { track.stop(); });
+    stream = null;
+  }
+  if (playbackUrl) URL.revokeObjectURL(playbackUrl);
+  var blob = new Blob(chunks, { type: recorder && recorder.mimeType ? recorder.mimeType : 'audio/webm' });
+  playbackUrl = URL.createObjectURL(blob);
+  $('playback').src = playbackUrl;
+  $('playback').style.display = '';
+  $('btn-record').disabled = false;
+  $('btn-stop').disabled = true;
+  $('speak-status').textContent = 'Play your recording, compare it with the target, then self-grade.';
+}
+function selfGrade(ok) {
+  state.attempts++;
+  if (ok) {
+    state.correct++;
+    state.streak++;
+    $('speak-status').textContent = 'Saved as matched. Try another tone.';
+  } else {
+    state.streak = 0;
+    $('speak-status').textContent = 'Try again. Hear the target once more.';
+    speakTone(currentSpeak);
+  }
+  saveState();
+  updateStats();
+}
+function renderChoices() {
+  TONES.forEach(function(tone) {
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'tone-choice';
+    btn.setAttribute('data-tone', tone.id);
+    btn.innerHTML = tone.name + '<small>' + tone.meaning + '</small>';
+    btn.addEventListener('click', function() { grade(tone.id, btn); });
+    $('tone-choices').appendChild(btn);
+
+    var target = document.createElement('button');
+    target.type = 'button';
+    target.className = 'tone-target';
+    target.setAttribute('data-tone', tone.id);
+    target.innerHTML = '<div class="w">' + tone.word + '</div><div class="t">' + tone.name + '</div>';
+    target.addEventListener('click', function() { setSpeakTone(tone); speakTone(tone); });
+    $('tone-targets').appendChild(target);
+
+    var ref = document.createElement('div');
+    ref.className = 'tone-ref-card';
+    ref.innerHTML = '<strong>' + tone.num + '. ' + tone.name + ' - ' + tone.word + '</strong><span>' + tone.cue + '</span>';
+    $('tone-ref').appendChild(ref);
+  });
+}
+function init() {
+  renderChoices();
+  pickTone();
+  setSpeakTone(TONES[0]);
+  updateStats();
+  $('btn-hear').addEventListener('click', function() { if (currentListen) speakTone(currentListen); });
+  $('btn-next').addEventListener('click', pickTone);
+  $('tab-listen').addEventListener('click', function() { setMode('listen'); pickTone(); });
+  $('tab-speak').addEventListener('click', function() { setMode('speak'); });
+  $('btn-target').addEventListener('click', function() { speakTone(currentSpeak); });
+  $('btn-record').addEventListener('click', startRecording);
+  $('btn-stop').addEventListener('click', stopRecording);
+  $('btn-self-good').addEventListener('click', function() { selfGrade(true); });
+  $('btn-self-miss').addEventListener('click', function() { selfGrade(false); });
+}
+init();
+})();
+</script>
+</body>
+</html>
