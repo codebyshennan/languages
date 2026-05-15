@@ -18,14 +18,14 @@
   #prog-bar { background: var(--accent2); }
   #streak   { color: var(--accent2); }
   /* Viet answer styles */
-  .ans-hanzi    { font-size: 28px; color: #8B0000; font-weight: 700; margin-right: 8px; }
+  .ans-hanzi    { font-size: 28px; color: #8B0000; font-weight: 700; margin-right: 10px; }
   .ans-cantonese{ font-size: 14px; color: #555; font-style: italic; }
-  #hanzi-row    { display: none; align-items: baseline; gap: 8px; margin-bottom: 10px; }
+  #hanzi-row    { display: none; align-items: baseline; gap: 10px; margin-bottom: 10px; }
   .ans-notes    { font-size: 13px; color: #334455; font-style: italic;
-                  background: #FFF8F0; border-left: 3px solid var(--accent2);
-                  padding: 8px 12px; border-radius: 0 6px 6px 0; margin-bottom: 8px; }
+                  background: #FFF8F0; border: 1px solid #F0E0C0;
+                  padding: 10px 12px; border-radius: 10px; margin-bottom: 10px; }
   #breakdown-panel {
-    margin-top: 12px; border-radius: 8px; overflow: hidden;
+    margin-top: 12px; border-radius: 10px; overflow: hidden;
     border: 1px solid #E0E8F0;
   }
   #breakdown-panel .cat-table th { background: var(--primary); }
@@ -47,18 +47,26 @@
   <div class="spacer"></div>
   <button id="nav-toggle" onclick="toggleNav()" aria-label="Menu"><i class="fa-solid fa-bars"></i></button>
   <div id="nav-menu">
-    <button class="mode-btn active" id="btn-vi-en" onclick="setMode('vi_en')">VI &#8594; EN</button>
-    <button class="mode-btn"        id="btn-en-vi" onclick="setMode('en_vi')">EN &#8594; VI</button>
-    <button class="mode-btn"        id="btn-pron"  onclick="setMode('pron')"><i class="fa-solid fa-volume-low"></i> PRON</button>
-    <label>Category:</label>
-    <select id="cat-select"></select>
-    <label>Part:</label>
-    <select id="part-select"></select>
-    <a href="/viet/pronunciation" class="mode-btn" style="text-decoration:none"><i class="fa-solid fa-book-open"></i> Guide</a>
-    <a href="/viet/tones" class="mode-btn" style="text-decoration:none"><i class="fa-solid fa-wave-square"></i> Tones</a>
-    <a href="/viet/typing" class="mode-btn" style="text-decoration:none"><i class="fa-solid fa-keyboard"></i> Typing</a>
-    <a href="/viet/numbers" class="mode-btn" style="text-decoration:none"><i class="fa-solid fa-hashtag"></i> Numbers</a>
-    <div class="nav-sep"></div>
+    <div class="nav-mode-group">
+      <button class="mode-btn active" id="btn-vi-en" onclick="setMode('vi_en')">VI &#8594; EN</button>
+      <button class="mode-btn"        id="btn-en-vi" onclick="setMode('en_vi')">EN &#8594; VI</button>
+      <button class="mode-btn"        id="btn-pron"  onclick="setMode('pron')"><i class="fa-solid fa-volume-low"></i> PRON</button>
+    </div>
+    <div class="nav-filter-group">
+      <label>Category:</label>
+      <select id="cat-select"></select>
+      <label>Part:</label>
+      <select id="part-select"></select>
+    </div>
+    <details class="nav-tools">
+      <summary class="mode-btn nav-tools-summary"><i class="fa-solid fa-layer-group"></i> Tools</summary>
+      <div class="nav-tools-menu">
+        <a href="/viet/pronunciation" class="mode-btn" style="text-decoration:none"><i class="fa-solid fa-book-open"></i> Guide</a>
+        <a href="/viet/tones" class="mode-btn" style="text-decoration:none"><i class="fa-solid fa-wave-square"></i> Tones</a>
+        <a href="/viet/typing" class="mode-btn" style="text-decoration:none"><i class="fa-solid fa-keyboard"></i> Typing</a>
+        <a href="/viet/numbers" class="mode-btn" style="text-decoration:none"><i class="fa-solid fa-hashtag"></i> Numbers</a>
+      </div>
+    </details>
     <a href="/" class="mode-btn" style="text-decoration:none"><i class="fa-solid fa-house"></i> Home</a>
     <button id="stats-btn" onclick="openStats()"><i class="fa-solid fa-chart-bar"></i> Stats</button>
   </div>

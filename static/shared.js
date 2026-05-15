@@ -620,11 +620,18 @@ function pronounce() {
 
 // ── Stats modal ────────────────────────────────────────────────────────────
 function openStats() {
+  var menu = document.getElementById("nav-menu");
+  if (menu) menu.classList.remove("open");
+  var openTools = document.querySelectorAll(".nav-tools[open]");
+  for (var toolIdx = 0; toolIdx < openTools.length; toolIdx++) {
+    openTools[toolIdx].removeAttribute("open");
+  }
   document.getElementById("modal-overlay").classList.add("open");
   var ov   = computeOverview();
   var cats = computeCatStats();
   var body = document.getElementById("modal-body");
   clearChildren(body);
+  var entries = Object.keys(cats).sort();
 
   function addOverviewBox(parent, value, label, color) {
     var box = document.createElement('div');
@@ -641,6 +648,89 @@ function openStats() {
     parent.appendChild(box);
   }
 
+  function makeSectionTitle(text) {
+    var heading = document.createElement('div');
+    heading.className = 'stats-section-title';
+    heading.textContent = text;
+    return heading;
+  }
+
+  function addFocusRow(parent, cat, valueText, metaText, color) {
+    var row = document.createElement('div');
+    row.className = 'focus-row';
+    var copy = document.createElement('div');
+    var name = document.createElement('div');
+    name.className = 'focus-name';
+    name.textContent = cat;
+    var meta = document.createElement('div');
+    meta.className = 'focus-meta';
+    meta.textContent = metaText;
+    copy.appendChild(name);
+    copy.appendChild(meta);
+    var value = document.createElement('div');
+    value.className = 'focus-value';
+    if (color) value.style.color = color;
+    value.textContent = valueText;
+    row.appendChild(copy);
+    row.appendChild(value);
+    parent.appendChild(row);
+  }
+
+  function addEmpty(parent, text) {
+    var empty = document.createElement('div');
+    empty.className = 'stats-empty';
+    empty.textContent = text;
+    parent.appendChild(empty);
+  }
+
+  function buildCategoryTable(categoryNames) {
+    var table = document.createElement('table');
+    table.className = 'cat-table';
+    var thead = document.createElement('thead');
+    var headRow = document.createElement('tr');
+    ['Category', 'Total', 'Mature', 'Due'].forEach(function(label) {
+      var th = document.createElement('th');
+      th.textContent = label;
+      headRow.appendChild(th);
+    });
+    thead.appendChild(headRow);
+    table.appendChild(thead);
+    var tbody = document.createElement('tbody');
+    for (var i = 0; i < categoryNames.length; i++) {
+      var cat = categoryNames[i];
+      var s   = cats[cat];
+      var pct = s.total ? Math.round(100 * s.mature / s.total) : 0;
+      var row = document.createElement('tr');
+      appendCell(row, cat);
+      appendCell(row, String(s.total));
+      var matureCell = document.createElement('td');
+      var matureText = document.createElement('div');
+      matureText.textContent = s.mature + ' (' + pct + '%)';
+      var pctBar = document.createElement('div');
+      pctBar.className = 'pct-bar';
+      var pctFill = document.createElement('div');
+      pctFill.className = 'pct-fill';
+      pctFill.style.width = pct + '%';
+      pctBar.appendChild(pctFill);
+      matureCell.appendChild(matureText);
+      matureCell.appendChild(pctBar);
+      row.appendChild(matureCell);
+      var dueCell = appendCell(row, s.due ? String(s.due) : '\u2014');
+      dueCell.style.color = s.due > 0 ? 'var(--amber)' : 'var(--dgrey)';
+      dueCell.style.fontWeight = s.due > 0 ? '700' : '400';
+      tbody.appendChild(row);
+    }
+    table.appendChild(tbody);
+    return table;
+  }
+
+  var lede = document.createElement('p');
+  lede.className = 'stats-lede';
+  lede.textContent = ov.due
+    ? ov.due + ' cards are due now. Use the focus list below to choose a category instead of scanning the full table.'
+    : 'No cards are due right now. The full category table is still available below.';
+  body.appendChild(lede);
+
   var overviewGrid = document.createElement('div');
   overviewGrid.className = 'overview-grid';
   addOverviewBox(overviewGrid, ov.due, 'Due Today', 'var(--amber)');
@@ -651,51 +741,59 @@ function openStats() {
   addOverviewBox(overviewGrid, ov.accuracy + '%', 'Accuracy');
   body.appendChild(overviewGrid);
 
-  var heading = document.createElement('h4');
-  heading.style.color = 'var(--primary)';
-  heading.style.marginBottom = '8px';
-  heading.textContent = 'Progress by Category';
-  body.appendChild(heading);
-
-  var table = document.createElement('table');
-  table.className = 'cat-table';
-  var thead = document.createElement('thead');
-  var headRow = document.createElement('tr');
-  ['Category', 'Total', 'Mature', 'Due'].forEach(function(label) {
-    var th = document.createElement('th');
-    th.textContent = label;
-    headRow.appendChild(th);
+  var dueEntries = entries.filter(function(cat) { return cats[cat].due > 0; });
+  dueEntries.sort(function(a, b) {
+    return cats[b].due - cats[a].due || cats[a].total - cats[b].total || a.localeCompare(b);
   });
-  thead.appendChild(headRow);
-  table.appendChild(thead);
-  var tbody = document.createElement('tbody');
-  var entries = Object.keys(cats).sort();
-  for (var i = 0; i < entries.length; i++) {
-    var cat = entries[i];
-    var s   = cats[cat];
-    var pct = s.total ? Math.round(100 * s.mature / s.total) : 0;
-    var row = document.createElement('tr');
-    appendCell(row, cat);
-    appendCell(row, String(s.total));
-    var matureCell = document.createElement('td');
-    var matureText = document.createElement('div');
-    matureText.textContent = s.mature + ' (' + pct + '%)';
-    var pctBar = document.createElement('div');
-    pctBar.className = 'pct-bar';
-    var pctFill = document.createElement('div');
-    pctFill.className = 'pct-fill';
-    pctFill.style.width = pct + '%';
-    pctBar.appendChild(pctFill);
-    matureCell.appendChild(matureText);
-    matureCell.appendChild(pctBar);
-    row.appendChild(matureCell);
-    var dueCell = appendCell(row, s.due ? String(s.due) : '\u2014');
-    dueCell.style.color = s.due > 0 ? 'var(--amber)' : 'var(--dgrey)';
-    dueCell.style.fontWeight = s.due > 0 ? '700' : '400';
-    tbody.appendChild(row);
+  var dueSection = document.createElement('div');
+  dueSection.className = 'stats-section';
+  dueSection.appendChild(makeSectionTitle('Due now'));
+  var dueList = document.createElement('div');
+  dueList.className = 'focus-list';
+  if (dueEntries.length) {
+    dueEntries.slice(0, 6).forEach(function(cat) {
+      var s = cats[cat];
+      var pct = s.total ? Math.round(100 * s.mature / s.total) : 0;
+      addFocusRow(dueList, cat, s.due + ' due', s.mature + ' mature of ' + s.total + ' (' + pct + '%)', 'var(--amber)');
+    });
+  } else {
+    addEmpty(dueList, 'Everything is caught up for the current selection.');
   }
-  table.appendChild(tbody);
-  body.appendChild(table);
+  dueSection.appendChild(dueList);
+  body.appendChild(dueSection);
+
+  var weakEntries = entries.filter(function(cat) {
+    return cats[cat].total > 0 && cats[cat].mature < cats[cat].total;
+  });
+  weakEntries.sort(function(a, b) {
+    var aPct = cats[a].total ? cats[a].mature / cats[a].total : 0;
+    var bPct = cats[b].total ? cats[b].mature / cats[b].total : 0;
+    return aPct - bPct || cats[b].total - cats[a].total || a.localeCompare(b);
+  });
+  var weakSection = document.createElement('div');
+  weakSection.className = 'stats-section';
+  weakSection.appendChild(makeSectionTitle('Lowest mastery'));
+  var weakList = document.createElement('div');
+  weakList.className = 'focus-list';
+  if (weakEntries.length) {
+    weakEntries.slice(0, 4).forEach(function(cat) {
+      var s = cats[cat];
+      var pct = s.total ? Math.round(100 * s.mature / s.total) : 0;
+      addFocusRow(weakList, cat, pct + '% mature', s.due + ' due, ' + s.total + ' total', 'var(--primary)');
+    });
+  } else {
+    addEmpty(weakList, 'All categories are mature.');
+  }
+  weakSection.appendChild(weakList);
+  body.appendChild(weakSection);
+
+  var full = document.createElement('details');
+  full.className = 'full-progress';
+  var summary = document.createElement('summary');
+  summary.textContent = 'Show full category table';
+  full.appendChild(summary);
+  full.appendChild(buildCategoryTable(entries));
+  body.appendChild(full);
 
   var tools = document.createElement('div');
   tools.className = 'progress-tools';
