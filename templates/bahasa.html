@@ -16,11 +16,11 @@
     --card-bg:         #FAFCFF;
   }
   /* Bahasa answer styles */
-  .ans-malay   { font-size: 16px; color: #2E7A5E; font-weight: 600; margin-bottom: 12px; }
-  .ans-example { font-size: 13px; color: #334455; font-style: italic;
-                 background: #F0F8F4; border-left: 3px solid var(--green);
-                 padding: 8px 12px; border-radius: 0 6px 6px 0; margin-bottom: 8px; }
-  .ans-eng-ex  { font-size: 12px; color: var(--dgrey); font-style: italic; padding-left: 4px; }
+  .ans-malay   { font-size: 20px; color: #2E7A5E; font-weight: 700; margin-bottom: 12px; }
+  .ans-example { font-size: 14px; color: #334455; font-style: italic;
+                 background: #F0F8F4; border: 1px solid #CFEBDD;
+                 padding: 10px 12px; border-radius: 8px; margin-bottom: 8px; }
+  .ans-eng-ex  { color: var(--dgrey); font-style: italic; padding-left: 4px; }
 </style>
 </head>
 <body>
@@ -30,13 +30,21 @@
   <div class="spacer"></div>
   <button id="nav-toggle" onclick="toggleNav()" aria-label="Menu"><i class="fa-solid fa-bars"></i></button>
   <div id="nav-menu">
-    <button class="mode-btn active" id="btn-id-en" onclick="setMode('id_en')">ID &#8594; EN</button>
-    <button class="mode-btn"        id="btn-en-id" onclick="setMode('en_id')">EN &#8594; ID</button>
-    <label>Category:</label>
-    <select id="cat-select"></select>
-    <a href="/bahasa/pronunciation" class="mode-btn" style="text-decoration:none"><i class="fa-solid fa-book-open"></i> Guide</a>
-    <a href="/bahasa/numbers" class="mode-btn" style="text-decoration:none"><i class="fa-solid fa-hashtag"></i> Numbers</a>
-    <div class="nav-sep"></div>
+    <div class="nav-mode-group">
+      <button class="mode-btn active" id="btn-id-en" onclick="setMode('id_en')">ID &#8594; EN</button>
+      <button class="mode-btn"        id="btn-en-id" onclick="setMode('en_id')">EN &#8594; ID</button>
+    </div>
+    <div class="nav-filter-group">
+      <label>Category:</label>
+      <select id="cat-select"></select>
+    </div>
+    <details class="nav-tools">
+      <summary class="mode-btn nav-tools-summary"><i class="fa-solid fa-layer-group"></i> Tools</summary>
+      <div class="nav-tools-menu">
+        <a href="/bahasa/pronunciation" class="mode-btn" style="text-decoration:none"><i class="fa-solid fa-book-open"></i> Guide</a>
+        <a href="/bahasa/numbers" class="mode-btn" style="text-decoration:none"><i class="fa-solid fa-hashtag"></i> Numbers</a>
+      </div>
+    </details>
     <a href="/" class="mode-btn" style="text-decoration:none"><i class="fa-solid fa-house"></i> Home</a>
     <button id="stats-btn" onclick="openStats()"><i class="fa-solid fa-chart-bar"></i> Stats</button>
   </div>
@@ -58,7 +66,7 @@
       <div class="stat-box">   <div class="num" id="ov-learn">&#8230;</div><div class="lbl">Learning</div></div>
       <div class="stat-box mat"><div class="num" id="ov-mature">&#8230;</div><div class="lbl">Mature</div></div>
     </div>
-    <p class="kb-hints" style="color:var(--dgrey);font-size:13px;">
+    <p class="kb-hints" style="color:var(--dgrey);">
       <span class="kbd">Space</span> show answer &nbsp;
       <span class="kbd">1</span>&#8211;<span class="kbd">4</span> rate &nbsp;
       <span class="kbd">P</span> pronounce &nbsp;

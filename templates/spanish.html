@@ -28,12 +28,12 @@
   .gender-f { background: #FDEDEC; color: #922B21; }
   .ans-notes {
     font-size: 13px; color: #5D4037; background: #FFF8E1;
-    border-left: 3px solid var(--accent2); padding: 8px 12px;
-    border-radius: 0 6px 6px 0; margin-bottom: 8px;
+    border: 1px solid #F2DFA6; padding: 8px 12px;
+    border-radius: 8px; margin-bottom: 8px;
   }
   .ans-example-es { font-size: 13px; color: #334455; font-style: italic;
-                    background: #FDF0F0; border-left: 3px solid var(--primary);
-                    padding: 8px 12px; border-radius: 0 6px 6px 0; margin-bottom: 6px; }
+                    background: #FDF0F0; border: 1px solid #F1C4C8;
+                    padding: 8px 12px; border-radius: 8px; margin-bottom: 6px; }
   .ans-example-en { font-size: 12px; color: var(--dgrey); font-style: italic; padding-left: 4px; }
 </style>
 </head>
@@ -44,13 +44,21 @@
   <div class="spacer"></div>
   <button id="nav-toggle" onclick="toggleNav()" aria-label="Menu"><i class="fa-solid fa-bars"></i></button>
   <div id="nav-menu">
-    <button class="mode-btn active" id="btn-es-en" onclick="setMode('es_en')">ES &#8594; EN</button>
-    <button class="mode-btn"        id="btn-en-es" onclick="setMode('en_es')">EN &#8594; ES</button>
-    <label>Category:</label>
-    <select id="cat-select"></select>
-    <a href="/spanish/pronunciation" class="mode-btn" style="text-decoration:none"><i class="fa-solid fa-book-open"></i> Guide</a>
-    <a href="/spanish/numbers" class="mode-btn" style="text-decoration:none"><i class="fa-solid fa-hashtag"></i> Numbers</a>
-    <div class="nav-sep"></div>
+    <div class="nav-mode-group">
+      <button class="mode-btn active" id="btn-es-en" onclick="setMode('es_en')">ES &#8594; EN</button>
+      <button class="mode-btn"        id="btn-en-es" onclick="setMode('en_es')">EN &#8594; ES</button>
+    </div>
+    <div class="nav-filter-group">
+      <label>Category:</label>
+      <select id="cat-select"></select>
+    </div>
+    <details class="nav-tools">
+      <summary class="mode-btn nav-tools-summary"><i class="fa-solid fa-layer-group"></i> Tools</summary>
+      <div class="nav-tools-menu">
+        <a href="/spanish/pronunciation" class="mode-btn" style="text-decoration:none"><i class="fa-solid fa-book-open"></i> Guide</a>
+        <a href="/spanish/numbers" class="mode-btn" style="text-decoration:none"><i class="fa-solid fa-hashtag"></i> Numbers</a>
+      </div>
+    </details>
     <a href="/" class="mode-btn" style="text-decoration:none"><i class="fa-solid fa-house"></i> Home</a>
     <button id="stats-btn" onclick="openStats()"><i class="fa-solid fa-chart-bar"></i> Stats</button>
   </div>
@@ -177,9 +185,13 @@ window.LANG_CONFIG = {
     document.getElementById("ans-english").textContent = mode === "es_en" ? card.english : card.spanish;
 
     var gWrap = document.getElementById("ans-gender-wrap");
-    if      (card.gender === "m") gWrap.innerHTML = '<span class="gender-badge gender-m">masculine</span>';
-    else if (card.gender === "f") gWrap.innerHTML = '<span class="gender-badge gender-f">feminine</span>';
-    else                          gWrap.innerHTML = "";
+    while (gWrap.firstChild) gWrap.removeChild(gWrap.firstChild);
+    if (card.gender === "m" || card.gender === "f") {
+      var genderBadge = document.createElement("span");
+      genderBadge.className = "gender-badge " + (card.gender === "m" ? "gender-m" : "gender-f");
+      genderBadge.textContent = card.gender === "m" ? "masculine" : "feminine";
+      gWrap.appendChild(genderBadge);
+    }
 
     var notesEl = document.getElementById("ans-notes");
     if (card.notes && card.notes !== "None" && card.notes.trim()) {

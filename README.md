@@ -2,6 +2,10 @@
 
 Small Flask app + scripts for practicing vocabulary (Vietnamese, Spanish, Indonesian) and generating Anki-friendly data from spreadsheets.
 
+The flashcard pages use browser-local spaced repetition. Sessions default to a
+bounded review queue, and each language stats panel includes progress
+backup/restore controls.
+
 ## What’s Here
 
 - `app.py`: single Flask server that serves all language pages and JSON vocab APIs.
@@ -29,8 +33,11 @@ Pages:
 
 - `/` (home)
 - `/bahasa`, `/bahasa/pronunciation`
-- `/viet`, `/viet/pronunciation`
+- `/bahasa/numbers`
+- `/viet`, `/viet/pronunciation`, `/viet/tones`, `/viet/typing`
+- `/viet/numbers`
 - `/spanish`, `/spanish/pronunciation`
+- `/spanish/numbers`
 
 APIs (JSON):
 
@@ -39,6 +46,9 @@ APIs (JSON):
 - `/api/vocab/spanish`
 
 Note: vocab is loaded and cached at process startup; restart the server after changing spreadsheet files.
+
+Note: SRS progress is stored in the browser. Use the stats panel on a language
+page to export a JSON backup before clearing browser data or switching devices.
 
 ## Deployment (Render)
 
@@ -61,4 +71,3 @@ See:
 - `indonesian/`
 - `spanish/`
 - `vietnamese/`
-

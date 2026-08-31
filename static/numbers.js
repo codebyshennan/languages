@@ -416,6 +416,8 @@ function initListenUI() {
   var currentNumber = null;
   var lastShownLevel = 0;
   var roundActive = false;
+  var sessionActive = false;
+  var nextRoundTimer = null;
 
   // TTS setup
   var ttsVoice = null;
@@ -479,6 +481,8 @@ function initListenUI() {
 
   // Round flow
   function startRound() {
+    if (!sessionActive) return;
+    clearTimeout(nextRoundTimer);
     hideListenControls();
     showTipIfNew();
     updateProgressStrip();
@@ -545,12 +549,17 @@ function initListenUI() {
 
     // Next round after delay
     var delay = correct ? 1500 : 3000;
-    setTimeout(function() { startRound(); }, delay);
+    clearTimeout(nextRoundTimer);
+    nextRoundTimer = setTimeout(function() {
+      if (sessionActive) startRound();
+    }, delay);
   }
 
   function endSession() {
+    sessionActive = false;
     roundActive = false;
     clearTimeout(countdownTimer);
+    clearTimeout(nextRoundTimer);
     speechSynthesis.cancel();
     elMainArea.style.display = 'none';
     elSessionEnd.style.display = 'block';
@@ -565,6 +574,7 @@ function initListenUI() {
     session = { attempts: 0, correct: 0 };
     elSessionEnd.style.display = 'none';
     elMainArea.style.display = 'block';
+    sessionActive = true;
     startRound();
   }
 
@@ -572,6 +582,7 @@ function initListenUI() {
   elBtnStart.addEventListener('click', function() {
     elStartOver.style.display = 'none';
     elMainArea.style.display = 'block';
+    sessionActive = true;
     startRound();
   });
 

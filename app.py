@@ -7,16 +7,47 @@ Run:  python3 app.py
 """
 
 import io
+from collections import OrderedDict
 from pathlib import Path
 
 import openpyxl
 from flask import Flask, abort, jsonify, render_template, request, send_file
 from gtts import gTTS
+from gtts.tts import gTTSError
 
 BASE = Path(__file__).parent
 app = Flask(__name__)
+MAX_TTS_CHARS = 120
+MAX_TTS_CACHE_ITEMS = 128
 
 # ── Vocab loaders ─────────────────────────────────────────────────────────────
+
+
+def _safe_card_num(raw_num):
+    try:
+        if raw_num is not None and str(raw_num).strip() != "":
+            return int(raw_num)
+    except (TypeError, ValueError):
+        pass
+    return None
+
+
+def _ensure_unique_card_nums(cards, language):
+    seen = set()
+    existing_nums = [card["num"] for card in cards if isinstance(card["num"], int)]
+    next_num = max(existing_nums, default=0) + 1
+    repairs = 0
+    for card in cards:
+        if not isinstance(card["num"], int) or card["num"] in seen:
+            while next_num in seen:
+                next_num += 1
+            card["num"] = next_num
+            next_num += 1
+            repairs += 1
+        seen.add(card["num"])
+    if repairs:
+        print(f"WARNING: repaired {repairs} missing/duplicate {language} card numbers")
+    return cards
 
 
 def _load_bahasa():
@@ -34,7 +65,7 @@ def _load_bahasa():
                 continue
             cards.append(
                 {
-                    "num": int(row[0]),
+                    "num": _safe_card_num(row[0]),
                     "indo": str(row[1] or ""),
                     "malay": str(row[2] or ""),
                     "english": str(row[3] or ""),
@@ -54,7 +85,7 @@ def _load_bahasa():
                 continue
             cards.append(
                 {
-                    "num": int(num) if num else 0,
+                    "num": _safe_card_num(num),
                     "indo": str(indo or ""),
                     "malay": str(malay or ""),
                     "english": str(eng or ""),
@@ -64,6 +95,7 @@ def _load_bahasa():
                 }
             )
     wb.close()
+    cards = _ensure_unique_card_nums(cards, "Bahasa")
     print(f"  Loaded {len(cards)} Bahasa cards")
     return cards
 
@@ -87,7 +119,7 @@ def _load_viet():
             continue
         cards.append(
             {
-                "num": int(num),
+                "num": _safe_card_num(num),
                 "part": str(part or ""),
                 "viet": str(viet or ""),
                 "english": str(english or ""),
@@ -98,6 +130,7 @@ def _load_viet():
             }
         )
     wb.close()
+    cards = _ensure_unique_card_nums(cards, "Viet")
     print(f"  Loaded {len(cards)} Viet cards")
     return cards
 
@@ -118,7 +151,7 @@ def _load_spanish():
             continue
         cards.append(
             {
-                "num": int(num) if num else 0,
+                "num": _safe_card_num(num),
                 "cat": str(cat or "General"),
                 "english": str(english or ""),
                 "spanish": str(spanish or ""),
@@ -129,6 +162,7 @@ def _load_spanish():
             }
         )
     wb.close()
+    cards = _ensure_unique_card_nums(cards, "Spanish")
     print(f"  Loaded {len(cards)} Spanish cards")
     return cards
 
@@ -138,8 +172,8 @@ BAHASA_CARDS = _load_bahasa()
 VIET_CARDS = _load_viet()
 SPANISH_CARDS = _load_spanish()
 
-# In-memory TTS cache: (word, lang) → MP3 bytes
-_tts_cache: dict = {}
+# Bounded in-memory TTS cache: (word, lang) → MP3 bytes
+_tts_cache: OrderedDict = OrderedDict()
 
 # Allowed gTTS language codes
 _ALLOWED_LANGS = {"vi", "id", "es"}
@@ -169,15 +203,24 @@ def api_tts():
 
     if not word:
         abort(400, "Missing ?word= parameter")
+    if len(word) > MAX_TTS_CHARS:
+        abort(413, f"?word= must be {MAX_TTS_CHARS} characters or fewer")
     if lang not in _ALLOWED_LANGS:
         abort(400, f"?lang= must be one of: {', '.join(sorted(_ALLOWED_LANGS))}")
 
     cache_key = (word, lang)
     if cache_key not in _tts_cache:
         buf = io.BytesIO()
-        gTTS(text=word, lang=lang).write_to_fp(buf)
+        try:
+            gTTS(text=word, lang=lang, timeout=5).write_to_fp(buf)
+        except (gTTSError, TimeoutError, OSError):
+            abort(502, "Could not generate speech audio")
         buf.seek(0)
         _tts_cache[cache_key] = buf.read()
+        while len(_tts_cache) > MAX_TTS_CACHE_ITEMS:
+            _tts_cache.popitem(last=False)
+    else:
+        _tts_cache.move_to_end(cache_key)
 
     return send_file(
         io.BytesIO(_tts_cache[cache_key]),
@@ -217,6 +260,11 @@ def viet_typing():
     return render_template("viet_typing.html")
 
 
+@app.route("/viet/tones")
+def viet_tones():
+    return render_template("viet_tones.html")
+
+
 @app.route("/spanish/pronunciation")
 def spanish_pronunciation():
     return render_template("spanish_pronunciation.html")
@@ -244,4 +292,4 @@ def spanish_numbers():
 
 # ── Run ───────────────────────────────────────────────────────────────────────
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5001, debug=False)
+    app.run(host="0.0.0.0", port=5000, debug=False)

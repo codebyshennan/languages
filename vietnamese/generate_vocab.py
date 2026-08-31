@@ -108,7 +108,7 @@ def call_api(client, count: int, next_num: int, cats: list, dedup_sample: set) -
         f"BANNED (already exist — do not use any of these):\n{', '.join(existing)}"
     )
     response = client.chat.completions.create(
-        model="anthropic/claude-opus-4-6",
+        model=os.getenv("OPENROUTER_MODEL", "openai/gpt-5.6-luna"),
         max_tokens=16000,
         messages=[{"role": "user", "content": prompt}],
     )
